@@ -39,6 +39,9 @@ public class Voo {
     private LocalDateTime horarioPartidaReal;
     private LocalDateTime horarioChegadaReal;
 
+    @Column(length = 255)
+    private String motivoCancelamento;
+
     @Enumerated(EnumType.STRING)
     private vooStatus status;
 
@@ -129,4 +132,13 @@ public class Voo {
     public void setStatus(vooStatus status) {
         this.status = status;
     }
+
+    public String getMotivoCancelamento() {
+        return motivoCancelamento;
+    }
+
+    public void setMotivoCancelamento(String motivoCancelamento) {
+        this.motivoCancelamento = motivoCancelamento;
+    }
+
 }
