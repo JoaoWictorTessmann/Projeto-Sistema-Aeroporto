@@ -49,4 +49,11 @@ public class PilotoController {
         pilotoService.deletarPiloto(id);
         return ResponseEntity.noContent().build();
     }
+
+    // Atualizar piloto
+    @GetMapping("/{id}")
+    public ResponseEntity<Piloto> atualizarPiloto(@PathVariable Long id, @RequestBody Piloto pilotoAtualizado) {
+        Piloto piloto = pilotoService.atualizarPiloto(id, pilotoAtualizado);
+        return ResponseEntity.ok(piloto);
+    }
 }

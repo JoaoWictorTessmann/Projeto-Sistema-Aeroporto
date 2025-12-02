@@ -49,4 +49,11 @@ public class CompanhiaAereaController {
         companhiaService.deletarCompanhia(id);
         return ResponseEntity.noContent().build();
     }
+
+    // Atualizar companhia
+    @PutMapping("/{id}")
+    public ResponseEntity<CompanhiaAerea> atualizarCompanhia(@PathVariable Long id, @RequestBody CompanhiaAerea companhiaAtualizada) {
+        CompanhiaAerea companhia = companhiaService.atualizarCompanhia(id, companhiaAtualizada);
+        return ResponseEntity.ok(companhia);
+    }
 }

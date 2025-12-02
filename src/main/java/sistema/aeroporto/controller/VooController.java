@@ -61,4 +61,11 @@ public class VooController {
         Voo voo = vooService.cancelarVoo(vooId, motivo);
         return ResponseEntity.ok(voo);
     }
+
+    // Atualizar voo
+    @PutMapping("/{vooId}")
+    public ResponseEntity<Voo> atualizarVoo(@PathVariable Long vooId, @RequestBody Voo vooAtualizado) {
+        Voo voo = vooService.atualizarVoo(vooId, vooAtualizado);
+        return ResponseEntity.ok(voo);
+    }
 }
