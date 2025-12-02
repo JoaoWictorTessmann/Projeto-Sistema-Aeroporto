@@ -38,4 +38,16 @@ public class PilotoService {
     public void deletarPiloto(Long id) {
         pilotoRepository.deleteById(id);
     }
+
+    // Método para atualizar um piloto existente
+    public Piloto atualizarPiloto(Long id, Piloto pilotoAtualizado) {
+        Piloto pilotoExistente = pilotoRepository.findById(id).orElse(null);
+        if (pilotoExistente != null) {
+            pilotoExistente.setDataRenovacao(pilotoAtualizado.getDataRenovacao());
+            pilotoExistente.setStatus(pilotoAtualizado.getStatus());
+            // Atualize outros campos conforme necessário
+            return pilotoRepository.save(pilotoExistente);
+        }
+        return null;
+    }
 }

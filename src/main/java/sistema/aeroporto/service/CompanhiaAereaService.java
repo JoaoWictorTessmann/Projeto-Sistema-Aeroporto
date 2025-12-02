@@ -46,4 +46,15 @@ public class CompanhiaAereaService {
         }
         companhiaAereaRepository.deleteById(id);
     }
+
+    // Atualizar companhia aérea existente
+    public CompanhiaAerea atualizarCompanhia(Long id, CompanhiaAerea companhiaAtualizada) {
+        CompanhiaAerea companhiaExistente = companhiaAereaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Companhia não encontrada"));
+
+        companhiaExistente.setStatus(companhiaAtualizada.getStatus());
+        // Atualize outros campos conforme necessário
+
+        return companhiaAereaRepository.save(companhiaExistente);
+    }
 }

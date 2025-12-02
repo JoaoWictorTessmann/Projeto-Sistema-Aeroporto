@@ -124,4 +124,20 @@ public class VooService {
     public List<Voo> buscarPorCompanhia(Long companhiaId) {
         return vooRepository.findByCompanhia_Id(companhiaId);
     }
+
+    // Atualizar informações do voo
+    public Voo atualizarVoo(Long vooId, Voo vooAtualizado) {
+        Voo vooExistente = vooRepository.findById(vooId)
+                .orElseThrow(() -> new RuntimeException("Voo não encontrado"));
+
+        // Atualiza campos permitidos
+        vooExistente.setHorarioPartidaPrevisto(vooAtualizado.getHorarioPartidaPrevisto());
+        vooExistente.setHorarioChegadaPrevisto(vooAtualizado.getHorarioChegadaPrevisto());
+        vooExistente.setHorarioPartidaReal(vooAtualizado.getHorarioPartidaReal());
+        vooExistente.setHorarioChegadaReal(vooAtualizado.getHorarioChegadaReal());
+        vooExistente.setStatus(vooAtualizado.getStatus());
+        // Outros campos conforme necessário
+
+        return vooRepository.save(vooExistente);
+    }
 }
