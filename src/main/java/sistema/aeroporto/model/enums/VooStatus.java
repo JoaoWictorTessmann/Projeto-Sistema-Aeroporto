@@ -1,6 +1,6 @@
-package sistema.aeroporto.enums;
+package sistema.aeroporto.model.enums;
 
-public enum vooStatus {
+public enum VooStatus {
     AGENDADO,
     CONFIRMADO,
     EMBARQUE,

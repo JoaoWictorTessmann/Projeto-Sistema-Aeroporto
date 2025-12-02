@@ -1,6 +1,6 @@
-package sistema.aeroporto.enums;
+package sistema.aeroporto.model.enums;
 
-public enum pilotoStatus {
+public enum PilotoStatus {
     ATIVO,
     INATIVO,
     SUSPENSO,

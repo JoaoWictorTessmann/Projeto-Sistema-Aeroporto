@@ -1,6 +1,5 @@
 package sistema.aeroporto.model;
 
-import sistema.aeroporto.enums.vooStatus;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -11,6 +10,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import sistema.aeroporto.model.enums.VooStatus;
 
 @Entity
 public class Voo {
@@ -43,7 +43,7 @@ public class Voo {
     private String motivoCancelamento;
 
     @Enumerated(EnumType.STRING)
-    private vooStatus status;
+    private VooStatus status;
 
     public Long getId() {
         return id;
@@ -125,11 +125,11 @@ public class Voo {
         this.horarioChegadaReal = horarioChegadaReal;
     }
 
-    public vooStatus getStatus() {
+    public VooStatus getStatus() {
         return status;
     }
 
-    public void setStatus(vooStatus status) {
+    public void setStatus(VooStatus status) {
         this.status = status;
     }
 

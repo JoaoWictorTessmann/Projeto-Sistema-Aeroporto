@@ -6,12 +6,12 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import sistema.aeroporto.enums.companhiaAereaStatus;
-import sistema.aeroporto.enums.pilotoStatus;
-import sistema.aeroporto.enums.vooStatus;
 import sistema.aeroporto.model.CompanhiaAerea;
 import sistema.aeroporto.model.Piloto;
 import sistema.aeroporto.model.Voo;
+import sistema.aeroporto.model.enums.CompanhiaAereaStatus;
+import sistema.aeroporto.model.enums.PilotoStatus;
+import sistema.aeroporto.model.enums.VooStatus;
 import sistema.aeroporto.repository.CompanhiaAereaRepository;
 import sistema.aeroporto.repository.PilotoRepository;
 import sistema.aeroporto.repository.VooRepository;
@@ -35,7 +35,7 @@ public class VooService {
         Piloto piloto = pilotoRepository.findById(voo.getPiloto().getId())
                 .orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
 
-        if (piloto.getStatus() != pilotoStatus.ATIVO) {
+        if (piloto.getStatus() != PilotoStatus.ATIVO) {
             throw new RuntimeException("Piloto não está apto para voar");
         }
 
@@ -50,7 +50,7 @@ public class VooService {
         CompanhiaAerea companhia = companhiaAereaRepository.findById(voo.getCompanhia().getId())
                 .orElseThrow(() -> new RuntimeException("Companhia aérea não encontrada"));
 
-        if (companhia.getStatus() != companhiaAereaStatus.ATIVA) {
+        if (companhia.getStatus() != CompanhiaAereaStatus.ATIVA) {
             throw new RuntimeException("Companhia não está ativa");
         }
 
@@ -70,7 +70,7 @@ public class VooService {
         }
 
         // Define status inicial
-        voo.setStatus(vooStatus.AGENDADO);
+        voo.setStatus(VooStatus.AGENDADO);
 
         // Salva no banco
         return vooRepository.save(voo);
@@ -82,11 +82,11 @@ public class VooService {
                 .orElseThrow(() -> new RuntimeException("Voo não encontrado"));
 
         Piloto piloto = voo.getPiloto();
-        if (piloto.getStatus() == pilotoStatus.INATIVO || piloto.getStatus() == pilotoStatus.VENCIDO) {
+        if (piloto.getStatus() == PilotoStatus.INATIVO || piloto.getStatus() == PilotoStatus.VENCIDO) {
             throw new RuntimeException("Piloto não pode iniciar o voo");
         }
 
-        voo.setStatus(vooStatus.EM_VOO);
+        voo.setStatus(VooStatus.EM_VOO);
         voo.setHorarioPartidaReal(LocalDateTime.now());
         return vooRepository.save(voo);
     }
@@ -100,7 +100,7 @@ public class VooService {
         Voo voo = vooRepository.findById(vooId)
                 .orElseThrow(() -> new RuntimeException("Voo não encontrado"));
 
-        voo.setStatus(vooStatus.CANCELADO);
+        voo.setStatus(VooStatus.CANCELADO);
         voo.setMotivoCancelamento(motivo);
         return vooRepository.save(voo);
     }
@@ -111,7 +111,7 @@ public class VooService {
     }
 
     // Buscar voos por status
-    public List<Voo> buscarPorStatus(vooStatus status) {
+    public List<Voo> buscarPorStatus(VooStatus status) {
         return vooRepository.findByStatus(status);
     }
 

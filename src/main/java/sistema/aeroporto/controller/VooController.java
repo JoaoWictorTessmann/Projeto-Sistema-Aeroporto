@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import sistema.aeroporto.enums.vooStatus;
 import sistema.aeroporto.model.Voo;
+import sistema.aeroporto.model.enums.VooStatus;
 import sistema.aeroporto.service.VooService;
 
 @RestController
@@ -32,7 +32,7 @@ public class VooController {
 
     // Buscar voos por status
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<Voo>> buscarPorStatus(@PathVariable vooStatus status) {
+    public ResponseEntity<List<Voo>> buscarPorStatus(@PathVariable VooStatus status) {
         return ResponseEntity.ok(vooService.buscarPorStatus(status));
     }
 

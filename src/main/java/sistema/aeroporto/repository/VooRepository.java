@@ -4,8 +4,8 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import sistema.aeroporto.enums.vooStatus;
 import sistema.aeroporto.model.Voo;
+import sistema.aeroporto.model.enums.VooStatus;
 
 public interface VooRepository extends JpaRepository <Voo, Long> {
     
@@ -16,7 +16,7 @@ public interface VooRepository extends JpaRepository <Voo, Long> {
     List<Voo> findByOrigem(String origem);
 
     // Método para buscar voos por status
-    List<Voo> findByStatus(vooStatus status);
+    List<Voo> findByStatus(VooStatus status);
 
     // Método para buscar voos por companhia aérea
     List<Voo> findByCompanhia_Id(Long idCompanhia);

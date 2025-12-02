@@ -1,6 +1,5 @@
 package sistema.aeroporto.model;
 
-import sistema.aeroporto.enums.companhiaAereaStatus;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -12,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import sistema.aeroporto.model.enums.CompanhiaAereaStatus;
 
 @Entity
 public class CompanhiaAerea {
@@ -30,7 +30,7 @@ public class CompanhiaAerea {
     private Boolean seguroAeronave;
 
     @Enumerated(EnumType.STRING)
-    private companhiaAereaStatus status;
+    private CompanhiaAereaStatus status;
 
     @OneToMany(mappedBy = "companhia")
     private List<Voo> voos;
@@ -75,11 +75,11 @@ public class CompanhiaAerea {
         this.seguroAeronave = seguroAeronave;
     }
 
-    public companhiaAereaStatus getStatus() {
+    public CompanhiaAereaStatus getStatus() {
         return status;
     }
 
-    public void setStatus(companhiaAereaStatus status) {
+    public void setStatus(CompanhiaAereaStatus status) {
         this.status = status;
     }
 }
