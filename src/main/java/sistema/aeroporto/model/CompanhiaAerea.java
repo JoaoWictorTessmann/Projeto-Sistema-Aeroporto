@@ -12,6 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import sistema.aeroporto.model.enums.CompanhiaAereaStatus;
+import jakarta.validation.constraints.NotBlank;
 
 @Entity
 public class CompanhiaAerea {
@@ -23,6 +24,7 @@ public class CompanhiaAerea {
     @Column(length = 150)
     private String nome;
 
+    @NotBlank(message = "CNPJ é obrigatório")
     @Column(length = 20)
     private String cnpj;
 

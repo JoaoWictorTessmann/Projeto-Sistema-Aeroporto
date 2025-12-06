@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import sistema.aeroporto.model.CompanhiaAerea;
 import sistema.aeroporto.repository.CompanhiaAereaRepository;
+import sistema.aeroporto.util.CnpjUtils;
 
 @Service
 public class CompanhiaAereaService {
@@ -33,6 +34,9 @@ public class CompanhiaAereaService {
 
     // Salvar nova companhia aérea
     public CompanhiaAerea salvarCompanhia(CompanhiaAerea companhia) {
+        if (!CnpjUtils.validarCnpj(companhia.getCnpj())) {
+            throw new RuntimeException("CNPJ inválido");
+        }
         if (companhiaAereaRepository.existsByCnpj(companhia.getCnpj())) {
             throw new RuntimeException("CNPJ já cadastrado");
         }
