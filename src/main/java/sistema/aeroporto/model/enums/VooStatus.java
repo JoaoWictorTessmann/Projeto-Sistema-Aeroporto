@@ -14,5 +14,6 @@ public enum VooStatus {
     ATRASADO,
     CANCELADO,
     DESVIADO,
-    EM_HOLD
+    EM_HOLD,
+    CONCLUIDO
 }

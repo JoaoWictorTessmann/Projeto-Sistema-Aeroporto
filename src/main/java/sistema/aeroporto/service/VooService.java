@@ -31,6 +31,16 @@ public class VooService {
     // Criar voo com todas as validações
     public Voo criarVoo(Voo voo) {
 
+        // Origem ≠ destino
+        if (voo.getOrigem().equalsIgnoreCase(voo.getDestino())) {
+            throw new RuntimeException("Origem e destino não podem ser iguais");
+        }
+        
+        // Horário não pode ser no passado
+        if (voo.getHorarioPartidaPrevisto().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Horário de partida não pode ser no passado");
+        }
+
         // Valida piloto
         Piloto piloto = pilotoRepository.findById(voo.getPiloto().getId())
                 .orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
@@ -57,16 +67,6 @@ public class VooService {
         // Código único
         if (vooRepository.existsByCodigo(voo.getCodigo())) {
             throw new RuntimeException("Código de voo já existente");
-        }
-
-        // Origem ≠ destino
-        if (voo.getOrigem().equalsIgnoreCase(voo.getDestino())) {
-            throw new RuntimeException("Origem e destino não podem ser iguais");
-        }
-
-        // Horário não pode ser no passado
-        if (voo.getHorarioPartidaPrevisto().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("Horário de partida não pode ser no passado");
         }
 
         // Define status inicial
