@@ -63,7 +63,7 @@ public class VooController {
     }
 
     // Atualizar voo
-    @PutMapping("/{vooId}")
+    @PutMapping("atualizar/{vooId}")
     public ResponseEntity<Voo> atualizarVoo(@PathVariable Long vooId, @RequestBody Voo vooAtualizado) {
         Voo voo = vooService.atualizarVoo(vooId, vooAtualizado);
         return ResponseEntity.ok(voo);
