@@ -34,7 +34,7 @@ public class Piloto {
 
     private LocalDate dataRenovacao;
 
-    @Column(length = 20)
+    @Column(length = 50)
     private String matricula;
 
     @Column(length = 50)

@@ -31,32 +31,41 @@ public class VooService {
     // Criar voo com todas as validações
     public Voo criarVoo(Voo voo) {
 
-        // Origem ≠ destino
+        if (voo.getOrigem() == null || voo.getDestino() == null) {
+            throw new RuntimeException("Origem e destino são obrigatórios");
+        }
+
         if (voo.getOrigem().equalsIgnoreCase(voo.getDestino())) {
             throw new RuntimeException("Origem e destino não podem ser iguais");
         }
-        
-        // Horário não pode ser no passado
+
+        if (voo.getHorarioPartidaPrevisto() == null) {
+            throw new RuntimeException("Horário de partida é obrigatório");
+        }
+
         if (voo.getHorarioPartidaPrevisto().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Horário de partida não pode ser no passado");
         }
 
-        // Valida piloto
+        if (voo.getPiloto() == null || voo.getPiloto().getId() == null) {
+            throw new RuntimeException("Piloto não encontrado");
+        }
+
         Piloto piloto = pilotoRepository.findById(voo.getPiloto().getId())
                 .orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
 
-        if (piloto.getStatus() != PilotoStatus.ATIVO) {
-            throw new RuntimeException("Piloto não está apto para voar");
-        }
+        boolean conflito = vooRepository.findByPiloto_Id(piloto.getId()).stream()
+                .anyMatch(v -> v.getHorarioPartidaPrevisto() != null &&
+                        v.getHorarioPartidaPrevisto().equals(voo.getHorarioPartidaPrevisto()));
 
-        // Verifica conflito de horários para o piloto
-        boolean conflito = vooRepository.findByPiloto_Id(voo.getPiloto().getId()).stream()
-                .anyMatch(v -> v.getHorarioPartidaPrevisto().equals(voo.getHorarioPartidaPrevisto()));
         if (conflito) {
             throw new RuntimeException("Piloto já está escalado para outro voo nesse horário");
         }
 
-        // Valida companhia
+        if (voo.getCompanhia() == null || voo.getCompanhia().getId() == null) {
+            throw new RuntimeException("Companhia aérea não encontrada");
+        }
+
         CompanhiaAerea companhia = companhiaAereaRepository.findById(voo.getCompanhia().getId())
                 .orElseThrow(() -> new RuntimeException("Companhia aérea não encontrada"));
 
@@ -64,30 +73,42 @@ public class VooService {
             throw new RuntimeException("Companhia não está ativa");
         }
 
-        // Código único
+        if (voo.getCodigo() == null || voo.getCodigo().isBlank()) {
+            throw new RuntimeException("Código do voo é obrigatório");
+        }
+
         if (vooRepository.existsByCodigo(voo.getCodigo())) {
             throw new RuntimeException("Código de voo já existente");
         }
 
-        // Define status inicial
         voo.setStatus(VooStatus.AGENDADO);
 
-        // Salva no banco
         return vooRepository.save(voo);
     }
 
-    // Iniciar voo com validação de status do piloto
     public Voo iniciarVoo(Long vooId) {
+
         Voo voo = vooRepository.findById(vooId)
                 .orElseThrow(() -> new RuntimeException("Voo não encontrado"));
 
+        if (voo.getStatus() != VooStatus.AGENDADO) {
+            throw new RuntimeException("Somente voos agendados podem ser iniciados");
+        }
+
         Piloto piloto = voo.getPiloto();
-        if (piloto.getStatus() == PilotoStatus.INATIVO || piloto.getStatus() == PilotoStatus.VENCIDO) {
+
+        if (piloto == null) {
+            throw new RuntimeException("Voo sem piloto");
+        }
+
+        if (piloto.getStatus() == PilotoStatus.INATIVO ||
+                piloto.getStatus() == PilotoStatus.VENCIDO) {
             throw new RuntimeException("Piloto não pode iniciar o voo");
         }
 
         voo.setStatus(VooStatus.EM_VOO);
         voo.setHorarioPartidaReal(LocalDateTime.now());
+
         return vooRepository.save(voo);
     }
 
@@ -108,6 +129,12 @@ public class VooService {
     // Listar todos os voos
     public List<Voo> listarTodos() {
         return vooRepository.findAll();
+    }
+
+    // Buscar por id
+    public Voo buscarPorId(Long id) {
+        return vooRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Voo não encontrado"));
     }
 
     // Buscar voos por status

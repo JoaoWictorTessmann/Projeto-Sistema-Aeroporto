@@ -15,6 +15,12 @@ public class CompanhiaAereaService {
     @Autowired
     private CompanhiaAereaRepository companhiaAereaRepository;
 
+
+    // Buscar companhia por ID
+    public CompanhiaAerea buscarPorId(Long id) {
+        return companhiaAereaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Companhia não encontrada"));
+    }
     // Listar todas as companhias aéreas
     public List<CompanhiaAerea> listarTodasCompanhias() {
         return companhiaAereaRepository.findAll();
@@ -57,7 +63,6 @@ public class CompanhiaAereaService {
                 .orElseThrow(() -> new RuntimeException("Companhia não encontrada"));
 
         companhiaExistente.setStatus(companhiaAtualizada.getStatus());
-        // Atualize outros campos conforme necessário
 
         return companhiaAereaRepository.save(companhiaExistente);
     }

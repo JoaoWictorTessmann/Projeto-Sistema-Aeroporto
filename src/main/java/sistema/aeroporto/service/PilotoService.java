@@ -2,6 +2,7 @@ package sistema.aeroporto.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,11 @@ public class PilotoService {
 
     @Autowired
     private PilotoRepository pilotoRepository;
+
+    // Buscar piloto por ID
+    public Piloto buscarPorId(Long id) {
+        return pilotoRepository.findById(id).orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
+    }
 
     // Método para listar todos os pilotos
     public List<Piloto> listarTodosPilotos() {
@@ -57,7 +63,7 @@ public class PilotoService {
 
         // --- Geração de matrícula (caso não exista) ---
         if (piloto.getMatricula() == null || piloto.getMatricula().isBlank()) {
-            piloto.setMatricula("TEMP");
+            piloto.setMatricula(UUID.randomUUID().toString());
         }
 
         // Primeiro salvamos para gerar o ID
@@ -79,13 +85,17 @@ public class PilotoService {
 
     // Método para atualizar um piloto existente
     public Piloto atualizarPiloto(Long id, Piloto pilotoAtualizado) {
-        Piloto pilotoExistente = pilotoRepository.findById(id).orElse(null);
-        if (pilotoExistente != null) {
-            pilotoExistente.setDataRenovacao(pilotoAtualizado.getDataRenovacao());
-            pilotoExistente.setStatus(pilotoAtualizado.getStatus());
-            // Atualize outros campos conforme necessário
-            return pilotoRepository.save(pilotoExistente);
-        }
-        return null;
+
+        Piloto pilotoExistente = pilotoRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
+
+        pilotoExistente.setNome(pilotoAtualizado.getNome());
+        pilotoExistente.setStatus(pilotoAtualizado.getStatus());
+        pilotoExistente.setDataRenovacao(pilotoAtualizado.getDataRenovacao());
+        pilotoExistente.setHabilitacao(pilotoAtualizado.getHabilitacao());
+        pilotoExistente.setGenero(pilotoAtualizado.getGenero());
+        pilotoExistente.setIdade(pilotoAtualizado.getIdade());
+
+        return pilotoRepository.save(pilotoExistente);
     }
 }
