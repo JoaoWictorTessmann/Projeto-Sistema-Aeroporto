@@ -33,14 +33,14 @@ public class PilotoController {
 
     // Buscar piloto por CPF
     @GetMapping("/cpf/{cpf}")
-    public ResponseEntity<Piloto> buscarPorCpf(@PathVariable PilotoDTO cpf) {
+    public ResponseEntity<Piloto> buscarPorCpf(@PathVariable String cpf) {
         Piloto piloto = pilotoService.buscarPorCpf(cpf);
         return ResponseEntity.ok(piloto);
     }
 
     // Buscar piloto por matrícula
     @GetMapping("/matricula/{matricula}")
-    public ResponseEntity<Piloto> buscarPorMatricula(@PathVariable PilotoDTO matricula) {
+    public ResponseEntity<Piloto> buscarPorMatricula(@PathVariable String matricula) {
         Piloto piloto = pilotoService.buscarPorMatricula(matricula);
         return ResponseEntity.ok(piloto);
     }

@@ -32,14 +32,14 @@ public class CompanhiaAereaController {
 
     // Buscar companhia por nome
     @GetMapping("/nome/{nome}")
-    public ResponseEntity<CompanhiaAerea> buscarPorNome(@PathVariable CompanhiaAereaDTO nome) {
+    public ResponseEntity<CompanhiaAerea> buscarPorNome(@PathVariable String nome) {
         CompanhiaAerea companhia = companhiaService.buscarPorNome(nome);
         return ResponseEntity.ok(companhia);
     }
 
     // Buscar companhia por CNPJ
     @GetMapping("/cnpj/{cnpj}")
-    public ResponseEntity<CompanhiaAerea> buscarPorCnpj(@PathVariable CompanhiaAereaDTO cnpj) {
+    public ResponseEntity<CompanhiaAerea> buscarPorCnpj(@PathVariable String cnpj) {
         CompanhiaAerea companhia = companhiaService.buscarPorCnpj(cnpj);
         return ResponseEntity.ok(companhia);
     }

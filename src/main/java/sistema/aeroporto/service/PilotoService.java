@@ -21,7 +21,8 @@ public class PilotoService {
 
     // Buscar piloto por ID
     public Piloto buscarPorId(Long id) {
-        return pilotoRepository.findById(id).orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
+        return pilotoRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
     }
 
     // Método para listar todos os pilotos
@@ -30,13 +31,15 @@ public class PilotoService {
     }
 
     // Método para buscar um piloto por CPF
-    public Piloto buscarPorCpf(PilotoDTO pilotoDTO) {
-        return pilotoRepository.findByCpf(pilotoDTO.cpf()).orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
+    public Piloto buscarPorCpf(String cpf) {
+        return pilotoRepository.findByCpf(cpf)
+            .orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
     }
 
     // Método para buscar um piloto por matrícula
-    public Piloto buscarPorMatricula(PilotoDTO matricula) {
-        return pilotoRepository.findByMatricula(matricula.matricula()).orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
+    public Piloto buscarPorMatricula(String matricula) {
+        return pilotoRepository.findByMatricula(matricula)
+            .orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
     }
 
     // Método para salvar um novo piloto

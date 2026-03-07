@@ -30,14 +30,14 @@ public class CompanhiaAereaService {
     }
 
     // Buscar companhia por nome
-    public CompanhiaAerea buscarPorNome(CompanhiaAereaDTO companhiaDTO) {
-        return companhiaAereaRepository.findByNome(companhiaDTO.nome())
+    public CompanhiaAerea buscarPorNome(String nome) {
+        return companhiaAereaRepository.findByNome(nome)
                 .orElseThrow(() -> new RuntimeException("Companhia não encontrada"));
     }
 
     // Buscar companhia por CNPJ
-    public CompanhiaAerea buscarPorCnpj(CompanhiaAereaDTO companhiaDTO) {
-        return companhiaAereaRepository.findByCnpj(companhiaDTO.cnpj())
+    public CompanhiaAerea buscarPorCnpj(String cnpj) {
+        return companhiaAereaRepository.findByCnpj(cnpj)
                 .orElseThrow(() -> new RuntimeException("Companhia não encontrada"));
     }
 
@@ -75,7 +75,8 @@ public class CompanhiaAereaService {
         companhiaExistente.setNome(companhiaAtualizada.nome());
         companhiaExistente.setCnpj(companhiaAtualizada.cnpj());
         companhiaExistente.setSeguroAeronave(companhiaAtualizada.seguroAeronave());
-        companhiaExistente.setStatus(CompanhiaAereaStatus.valueOf(companhiaAtualizada.status()));
+        companhiaExistente.setStatus(CompanhiaAereaStatus.valueOf(companhiaAtualizada.status().toUpperCase())
+    );
 
         return companhiaAereaRepository.save(companhiaExistente);
     }
