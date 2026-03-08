@@ -22,7 +22,7 @@ public class PilotoService {
     // Buscar piloto por ID
     public Piloto buscarPorId(Long id) {
         return pilotoRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
     }
 
     // Método para listar todos os pilotos
@@ -33,13 +33,13 @@ public class PilotoService {
     // Método para buscar um piloto por CPF
     public Piloto buscarPorCpf(String cpf) {
         return pilotoRepository.findByCpf(cpf)
-            .orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
     }
 
     // Método para buscar um piloto por matrícula
     public Piloto buscarPorMatricula(String matricula) {
         return pilotoRepository.findByMatricula(matricula)
-            .orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Piloto não encontrado"));
     }
 
     // Método para salvar um novo piloto
@@ -53,6 +53,12 @@ public class PilotoService {
         piloto.setDataRenovacao(LocalDate.now());
         piloto.setMatricula(UUID.randomUUID().toString());
         piloto.setHabilitacao(pilotoDTO.habilitacao());
+
+        if (pilotoDTO.status() != null && !pilotoDTO.status().isBlank()) {
+            piloto.setStatus(PilotoStatus.valueOf(pilotoDTO.status().toUpperCase()));
+        } else {
+            piloto.setStatus(PilotoStatus.ATIVO);
+        }
 
         // --- Validações básicas ---
         if (piloto.getNome() == null || piloto.getNome().isBlank()) {
@@ -85,7 +91,6 @@ public class PilotoService {
 
         // Agora geramos a matrícula final
         String matriculaGerada = "PIL" + LocalDate.now().getYear() + String.format("%04d", saved.getId());
-
         saved.setMatricula(matriculaGerada);
 
         // Atualizamos a matrícula no banco

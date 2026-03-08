@@ -12,11 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import jakarta.transaction.Transactional;
-import sistema.aeroporto.model.CompanhiaAerea;
-import sistema.aeroporto.model.Piloto;
+import sistema.aeroporto.dto.CompanhiaAereaDTO;
+import sistema.aeroporto.dto.PilotoDTO;
+import sistema.aeroporto.dto.VooDTO;
 import sistema.aeroporto.model.Voo;
-import sistema.aeroporto.model.enums.CompanhiaAereaStatus;
-import sistema.aeroporto.model.enums.PilotoStatus;
 import sistema.aeroporto.model.enums.VooStatus;
 
 @SpringBootTest
@@ -32,34 +31,103 @@ public class VooServiceIntegrationTest {
     @Autowired
     private VooService vooService;
 
+    // -------------------------------------------------------------------------
+    // Helpers para reduzir repetição na criação de DTOs
+    // -------------------------------------------------------------------------
+
+    /** Cria e salva um piloto ATIVO com CPF válido. */
+    private sistema.aeroporto.model.Piloto criarPilotoAtivo(String nome, String cpf) {
+        PilotoDTO dto = new PilotoDTO(
+                nome, // nome
+                "30", // idade
+                "M", // genero
+                cpf, // cpf
+                "PPL", // habilitacao
+                null, // matricula (gerada pelo service)
+                "ATIVO" // status
+        );
+        return pilotoService.salvarPiloto(dto);
+    }
+
+    /** Cria e salva um piloto INATIVO com CPF válido. */
+    private sistema.aeroporto.model.Piloto criarPilotoInativo(String nome, String cpf) {
+        PilotoDTO dto = new PilotoDTO(
+                nome, "30", "M", cpf, "PPL", null, "INATIVO");
+        return pilotoService.salvarPiloto(dto);
+    }
+
+    /** Cria e salva uma companhia ATIVA. */
+    private sistema.aeroporto.model.CompanhiaAerea criarCompanhiaAtiva(String nome, String cnpj) {
+        CompanhiaAereaDTO dto = new CompanhiaAereaDTO(nome, cnpj, true, "ATIVA");
+        return companhiaAereaService.salvarCompanhia(dto);
+    }
+
+    /** Cria e salva uma companhia INATIVA. */
+    private sistema.aeroporto.model.CompanhiaAerea criarCompanhiaInativa(String nome, String cnpj) {
+        CompanhiaAereaDTO dto = new CompanhiaAereaDTO(nome, cnpj, true, "INATIVA");
+        return companhiaAereaService.salvarCompanhia(dto);
+    }
+
+    /**
+     * Monta um VooDTO completo a partir dos objetos já salvos.
+     * horarioPartida deve ser uma string ISO-8601, ex:
+     * LocalDateTime.now().plusHours(2).toString()
+     */
+    private VooDTO montarVooDTO(
+            sistema.aeroporto.model.Piloto piloto,
+            sistema.aeroporto.model.CompanhiaAerea companhia,
+            String codigo,
+            String origem,
+            String destino,
+            String horarioPartida) {
+        PilotoDTO pilotoDTO = new PilotoDTO(
+                piloto.getId().toString(),
+                piloto.getNome(),
+                piloto.getIdade(),
+                piloto.getGenero(),
+                piloto.getCpf(),
+                piloto.getHabilitacao(),
+                piloto.getMatricula(),
+                piloto.getStatus() != null ? piloto.getStatus().name() : null);
+        CompanhiaAereaDTO companhiaDTO = new CompanhiaAereaDTO(
+                companhia.getId().toString(),
+                companhia.getNome(),
+                companhia.getCnpj(),
+                companhia.getSeguroAeronave(),
+                companhia.getStatus() != null ? companhia.getStatus().name() : null);
+        return new VooDTO(
+                null, // id (ainda não existe)
+                pilotoDTO,
+                companhiaDTO,
+                codigo,
+                origem,
+                destino,
+                null, // motivoCancelamento
+                horarioPartida, // horarioPartidaPrevisto
+                null, // horarioChegadaPrevisto
+                null, // horarioPartidaReal
+                null, // horarioChegadaReal
+                null // status
+        );
+    }
+
+    // =========================================================================
+    // TESTES
+    // =========================================================================
+
     @Test
     @DisplayName("Deve criar um voo com sucesso")
     void deveCriarVooComSucesso() {
 
-        Piloto piloto = new Piloto();
-        piloto.setNome("João");
-        piloto.setCpf("11144477735");
-        piloto.setStatus(PilotoStatus.ATIVO);
+        var piloto = criarPilotoAtivo("João", "111.444.777-35");
+        var companhia = criarCompanhiaAtiva("Azul", "05.451.308/0001-77");
 
-        piloto = pilotoService.salvarPiloto(piloto);
+        VooDTO vooDTO = montarVooDTO(
+                piloto, companhia,
+                "AZ1234", "GRU", "JFK",
+                LocalDateTime.now().plusHours(2).toString());
 
-        CompanhiaAerea companhia = new CompanhiaAerea();
-        companhia.setNome("Azul");
-        companhia.setCnpj("05.451.308/0001-77");
-        companhia.setStatus(CompanhiaAereaStatus.ATIVA);
-
-        companhia = companhiaAereaService.salvarCompanhia(companhia);
-
-        Voo voo = new Voo();
-        voo.setPiloto(piloto);
-        voo.setCompanhia(companhia);
-        voo.setCodigo("AZ1234");
-        voo.setOrigem("GRU");
-        voo.setDestino("JFK");
-        voo.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(2));
-
-        Voo vooSalvo = vooService.criarVoo(voo);
-
+        Voo vooSalvo = vooService.criarVoo(vooDTO);
         Voo vooCriado = vooService.buscarPorId(vooSalvo.getId());
 
         assertEquals("AZ1234", vooCriado.getCodigo());
@@ -69,24 +137,26 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve lançar erro quando piloto não existe")
     void deveLancarErroQuandoPilotoNaoExiste() {
 
-        CompanhiaAerea companhia = new CompanhiaAerea();
-        companhia.setNome("Azul");
-        companhia.setCnpj("05.451.308/0001-77");
-        companhia.setStatus(CompanhiaAereaStatus.ATIVA);
+        var companhia = criarCompanhiaAtiva("Azul", "05.451.308/0001-77");
 
-        companhia = companhiaAereaService.salvarCompanhia(companhia);
+        // PilotoDTO com CPF que não existe no banco
+        PilotoDTO pilotoInexistente = new PilotoDTO(
+                null, "Fantasma", "30", "M",
+                "000.000.000-00", "PPL", null, "ATIVO");
+        CompanhiaAereaDTO companhiaDTO = new CompanhiaAereaDTO(
+                companhia.getId().toString(),
+                companhia.getNome(), companhia.getCnpj(),
+                companhia.getSeguroAeronave(), companhia.getStatus().name());
 
-        Voo voo = new Voo();
-        voo.setPiloto(null);
-        voo.setCompanhia(companhia);
-        voo.setCodigo("AZ1234");
-        voo.setOrigem("GRU");
-        voo.setDestino("JFK");
-        voo.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(2));
+        VooDTO vooDTO = new VooDTO(
+                null, pilotoInexistente, companhiaDTO,
+                "AZ1234", "GRU", "JFK",
+                null, LocalDateTime.now().plusHours(2).toString(),
+                null, null, null, null);
 
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
-                () -> vooService.criarVoo(voo));
+                () -> vooService.criarVoo(vooDTO));
 
         assertEquals("Piloto não encontrado", exception.getMessage());
     }
@@ -95,27 +165,15 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve lançar erro ao iniciar voo com piloto inativo")
     void deveLancarErroQuandoPilotoInativo() {
 
-        Piloto piloto = new Piloto();
-        piloto.setNome("Maria");
-        piloto.setCpf("11144477735");
-        piloto.setStatus(PilotoStatus.INATIVO);
-        piloto = pilotoService.salvarPiloto(piloto);
+        var piloto = criarPilotoInativo("Maria", "111.444.777-35");
+        var companhia = criarCompanhiaAtiva("Latam", "05.451.308/0001-77");
 
-        CompanhiaAerea companhia = new CompanhiaAerea();
-        companhia.setNome("Latam");
-        companhia.setCnpj("05.451.308/0001-77");
-        companhia.setStatus(CompanhiaAereaStatus.ATIVA);
-        companhia = companhiaAereaService.salvarCompanhia(companhia);
+        VooDTO vooDTO = montarVooDTO(
+                piloto, companhia,
+                "LT5678", "GRU", "LAX",
+                LocalDateTime.now().plusHours(2).toString());
 
-        Voo voo = new Voo();
-        voo.setPiloto(piloto);
-        voo.setCompanhia(companhia);
-        voo.setCodigo("LT5678");
-        voo.setOrigem("GRU");
-        voo.setDestino("LAX");
-        voo.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(2));
-
-        Voo vooCriado = vooService.criarVoo(voo);
+        Voo vooCriado = vooService.criarVoo(vooDTO);
 
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
@@ -128,44 +186,14 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve lançar erro por conflito de horário")
     void deveLancarErroPorConflitoDeHorario() {
 
-        // arrange
-        Piloto piloto = new Piloto();
-        piloto.setNome("Carlos");
-        piloto.setCpf("11144477735");
-        piloto.setStatus(PilotoStatus.ATIVO);
+        var piloto = criarPilotoAtivo("Carlos", "111.444.777-35");
+        var companhia = criarCompanhiaAtiva("Gol", "05.451.308/0001-77");
 
-        piloto = pilotoService.salvarPiloto(piloto);
+        String horario = LocalDateTime.now().plusHours(3).toString();
 
-        CompanhiaAerea companhia = new CompanhiaAerea();
-        companhia.setNome("Gol");
-        companhia.setCnpj("05.451.308/0001-77");
-        companhia.setStatus(CompanhiaAereaStatus.ATIVA);
+        vooService.criarVoo(montarVooDTO(piloto, companhia, "GL1001", "GRU", "REC", horario));
 
-        companhia = companhiaAereaService.salvarCompanhia(companhia);
-
-        LocalDateTime horario = LocalDateTime.now().plusHours(3);
-
-        // Primeiro voo (válido)
-        Voo voo1 = new Voo();
-        voo1.setPiloto(piloto);
-        voo1.setCompanhia(companhia);
-        voo1.setCodigo("GL1001");
-        voo1.setOrigem("GRU");
-        voo1.setDestino("REC");
-        voo1.setHorarioPartidaPrevisto(horario);
-
-        vooService.criarVoo(voo1);
-
-        // Segundo voo com mesmo piloto e mesmo horário
-        Voo voo2 = new Voo();
-        voo2.setPiloto(piloto);
-        voo2.setCompanhia(companhia);
-        voo2.setCodigo("GL2002");
-        voo2.setOrigem("GRU");
-        voo2.setDestino("SSA");
-        voo2.setHorarioPartidaPrevisto(horario);
-
-        // act & assert
+        VooDTO voo2 = montarVooDTO(piloto, companhia, "GL2002", "GRU", "SSA", horario);
 
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
@@ -178,30 +206,25 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve lançar erro quando companhia não existe")
     void deveLancarErroQuandoCompanhiaNaoExiste() {
 
-        // ---------- Arrange ----------
+        var piloto = criarPilotoAtivo("João", "111.444.777-35");
 
-        Piloto piloto = new Piloto();
-        piloto.setNome("João");
-        piloto.setCpf("111.444.777-35");
-        piloto.setStatus(PilotoStatus.ATIVO);
-        piloto = pilotoService.salvarPiloto(piloto);
+        // CNPJ que não está cadastrado no banco
+        CompanhiaAereaDTO companhiaFake = new CompanhiaAereaDTO(
+                "999", "Fantasma", "00.000.000/0000-00", false, "ATIVA");
+        PilotoDTO pilotoDTO = new PilotoDTO(
+                piloto.getId().toString(), piloto.getNome(), piloto.getIdade(),
+                piloto.getGenero(), piloto.getCpf(), piloto.getHabilitacao(),
+                piloto.getMatricula(), piloto.getStatus().name());
 
-        CompanhiaAerea companhiaFake = new CompanhiaAerea();
-        companhiaFake.setId(999L); // ID que não existe no banco
-
-        Voo voo = new Voo();
-        voo.setPiloto(piloto);
-        voo.setCompanhia(companhiaFake);
-        voo.setCodigo("AZ9000");
-        voo.setOrigem("GRU");
-        voo.setDestino("MIA");
-        voo.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(2));
-
-        // ---------- Act + Assert ----------
+        VooDTO vooDTO = new VooDTO(
+                null, pilotoDTO, companhiaFake,
+                "AZ9000", "GRU", "MIA",
+                null, LocalDateTime.now().plusHours(2).toString(),
+                null, null, null, null);
 
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
-                () -> vooService.criarVoo(voo));
+                () -> vooService.criarVoo(vooDTO));
 
         assertEquals("Companhia aérea não encontrada", exception.getMessage());
     }
@@ -210,33 +233,17 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve lançar erro quando companhia está inativa")
     void deveLancarErroQuandoCompanhiaInativa() {
 
-        // ---------- Arrange ----------
+        var piloto = criarPilotoAtivo("Carlos", "111.444.777-35");
+        var companhia = criarCompanhiaInativa("Latam", "05.451.308/0001-77");
 
-        Piloto piloto = new Piloto();
-        piloto.setNome("Carlos");
-        piloto.setCpf("111.444.777-35");
-        piloto.setStatus(PilotoStatus.ATIVO);
-        piloto = pilotoService.salvarPiloto(piloto);
-
-        CompanhiaAerea companhia = new CompanhiaAerea();
-        companhia.setNome("Latam");
-        companhia.setCnpj("05.451.308/0001-77");
-        companhia.setStatus(CompanhiaAereaStatus.INATIVA);
-        companhia = companhiaAereaService.salvarCompanhia(companhia);
-
-        Voo voo = new Voo();
-        voo.setPiloto(piloto);
-        voo.setCompanhia(companhia);
-        voo.setCodigo("LA8000");
-        voo.setOrigem("GRU");
-        voo.setDestino("SCL");
-        voo.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(4));
-
-        // ---------- Act + Assert ----------
+        VooDTO vooDTO = montarVooDTO(
+                piloto, companhia,
+                "LA8000", "GRU", "SCL",
+                LocalDateTime.now().plusHours(4).toString());
 
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
-                () -> vooService.criarVoo(voo));
+                () -> vooService.criarVoo(vooDTO));
 
         assertEquals("Companhia não está ativa", exception.getMessage());
     }
@@ -245,34 +252,16 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve lançar erro quando código for duplicado")
     void deveLancarErroCodigoDuplicado() {
 
-        Piloto piloto = new Piloto();
-        piloto.setNome("João");
-        piloto.setCpf("111.444.777-35");
-        piloto.setStatus(PilotoStatus.ATIVO);
-        piloto = pilotoService.salvarPiloto(piloto);
+        var piloto = criarPilotoAtivo("João", "111.444.777-35");
+        var companhia = criarCompanhiaAtiva("Azul", "05.451.308/0001-77");
 
-        CompanhiaAerea companhia = new CompanhiaAerea();
-        companhia.setNome("Azul");
-        companhia.setCnpj("05.451.308/0001-77");
-        companhia.setStatus(CompanhiaAereaStatus.ATIVA);
-        companhia = companhiaAereaService.salvarCompanhia(companhia);
+        vooService.criarVoo(montarVooDTO(
+                piloto, companhia, "VOO001", "GRU", "JFK",
+                LocalDateTime.now().plusHours(2).toString()));
 
-        Voo voo1 = new Voo();
-        voo1.setPiloto(piloto);
-        voo1.setCompanhia(companhia);
-        voo1.setCodigo("VOO001");
-        voo1.setOrigem("GRU");
-        voo1.setDestino("JFK");
-        voo1.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(2));
-        vooService.criarVoo(voo1);
-
-        Voo voo2 = new Voo();
-        voo2.setPiloto(piloto);
-        voo2.setCompanhia(companhia);
-        voo2.setCodigo("VOO001");
-        voo2.setOrigem("GRU");
-        voo2.setDestino("LAX");
-        voo2.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(4));
+        VooDTO voo2 = montarVooDTO(
+                piloto, companhia, "VOO001", "GRU", "LAX",
+                LocalDateTime.now().plusHours(4).toString());
 
         RuntimeException e = assertThrows(RuntimeException.class,
                 () -> vooService.criarVoo(voo2));
@@ -284,21 +273,15 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve lançar erro quando origem e destino forem iguais")
     void deveLancarErroOrigemIgualDestino() {
 
-        Piloto piloto = new Piloto();
-        piloto.setNome("Carlos");
-        piloto.setCpf("111.444.777-35");
-        piloto.setStatus(PilotoStatus.ATIVO);
-        piloto = pilotoService.salvarPiloto(piloto);
+        var piloto = criarPilotoAtivo("Carlos", "111.444.777-35");
+        var companhia = criarCompanhiaAtiva("Azul", "05.451.308/0001-77");
 
-        Voo voo = new Voo();
-        voo.setPiloto(piloto);
-        voo.setCodigo("VOO100");
-        voo.setOrigem("RIO");
-        voo.setDestino("RIO");
-        voo.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(2));
+        VooDTO vooDTO = montarVooDTO(
+                piloto, companhia, "VOO100", "RIO", "RIO",
+                LocalDateTime.now().plusHours(2).toString());
 
         RuntimeException e = assertThrows(RuntimeException.class,
-                () -> vooService.criarVoo(voo));
+                () -> vooService.criarVoo(vooDTO));
 
         assertEquals("Origem e destino não podem ser iguais", e.getMessage());
     }
@@ -307,21 +290,15 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve lançar erro quando horário estiver no passado")
     void deveLancarErroHorarioNoPassado() {
 
-        Piloto piloto = new Piloto();
-        piloto.setNome("Pedro");
-        piloto.setCpf("111.444.777-35");
-        piloto.setStatus(PilotoStatus.ATIVO);
-        piloto = pilotoService.salvarPiloto(piloto);
+        var piloto = criarPilotoAtivo("Pedro", "111.444.777-35");
+        var companhia = criarCompanhiaAtiva("Azul", "05.451.308/0001-77");
 
-        Voo voo = new Voo();
-        voo.setPiloto(piloto);
-        voo.setCodigo("VOO200");
-        voo.setOrigem("GRU");
-        voo.setDestino("SSA");
-        voo.setHorarioPartidaPrevisto(LocalDateTime.now().minusHours(1));
+        VooDTO vooDTO = montarVooDTO(
+                piloto, companhia, "VOO200", "GRU", "SSA",
+                LocalDateTime.now().minusHours(1).toString());
 
         RuntimeException e = assertThrows(RuntimeException.class,
-                () -> vooService.criarVoo(voo));
+                () -> vooService.criarVoo(vooDTO));
 
         assertEquals("Horário de partida não pode ser no passado", e.getMessage());
     }
@@ -330,26 +307,12 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve iniciar voo com sucesso")
     void deveIniciarVooComSucesso() {
 
-        Piloto piloto = new Piloto();
-        piloto.setNome("Maria");
-        piloto.setCpf("111.444.777-35");
-        piloto.setStatus(PilotoStatus.ATIVO);
-        piloto = pilotoService.salvarPiloto(piloto);
+        var piloto = criarPilotoAtivo("Maria", "111.444.777-35");
+        var companhia = criarCompanhiaAtiva("Gol", "05.451.308/0001-77");
 
-        CompanhiaAerea companhia = new CompanhiaAerea();
-        companhia.setNome("Gol");
-        companhia.setCnpj("05.451.308/0001-77");
-        companhia.setStatus(CompanhiaAereaStatus.ATIVA);
-        companhia = companhiaAereaService.salvarCompanhia(companhia);
-
-        Voo voo = new Voo();
-        voo.setPiloto(piloto);
-        voo.setCompanhia(companhia);
-        voo.setCodigo("VOO300");
-        voo.setOrigem("GRU");
-        voo.setDestino("POA");
-        voo.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(2));
-        voo = vooService.criarVoo(voo);
+        Voo voo = vooService.criarVoo(montarVooDTO(
+                piloto, companhia, "VOO300", "GRU", "POA",
+                LocalDateTime.now().plusHours(2).toString()));
 
         Voo iniciado = vooService.iniciarVoo(voo.getId());
 
@@ -371,30 +334,12 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve lançar erro ao iniciar voo com piloto inativo")
     void deveLancarErroPilotoInativoAoIniciar() {
 
-        // Criar piloto INATIVO
-        Piloto piloto = new Piloto();
-        piloto.setNome("Lucas");
-        piloto.setCpf("111.444.777-35");
-        piloto.setStatus(PilotoStatus.INATIVO);
-        piloto = pilotoService.salvarPiloto(piloto);
+        var piloto = criarPilotoInativo("Lucas", "111.444.777-35");
+        var companhia = criarCompanhiaAtiva("Latam", "05.451.308/0001-77");
 
-        // Criar companhia ATIVA
-        CompanhiaAerea companhia = new CompanhiaAerea();
-        companhia.setNome("Latam");
-        companhia.setCnpj("05.451.308/0001-77");
-        companhia.setStatus(CompanhiaAereaStatus.ATIVA);
-        companhia = companhiaAereaService.salvarCompanhia(companhia);
-
-        // Criar voo válido
-        Voo voo = new Voo();
-        voo.setPiloto(piloto);
-        voo.setCompanhia(companhia);
-        voo.setCodigo("VOO400");
-        voo.setOrigem("GRU");
-        voo.setDestino("MIA");
-        voo.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(3));
-
-        Voo vooCriado = vooService.criarVoo(voo);
+        Voo vooCriado = vooService.criarVoo(montarVooDTO(
+                piloto, companhia, "VOO400", "GRU", "MIA",
+                LocalDateTime.now().plusHours(3).toString()));
 
         RuntimeException exception = assertThrows(RuntimeException.class,
                 () -> vooService.iniciarVoo(vooCriado.getId()));
@@ -406,36 +351,21 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve cancelar voo com sucesso")
     void deveCancelarVooComSucesso() {
 
-        // Criar piloto
-        Piloto piloto = new Piloto();
-        piloto.setNome("João");
-        piloto.setCpf("11144477735");
-        piloto.setStatus(PilotoStatus.ATIVO);
-        piloto = pilotoService.salvarPiloto(piloto);
+        var piloto = criarPilotoAtivo("João", "111.444.777-35");
+        var companhia = criarCompanhiaAtiva("LATAM", "05.451.308/0001-77");
 
-        // Criar companhia
-        CompanhiaAerea companhia = new CompanhiaAerea();
-        companhia.setNome("LATAM");
-        companhia.setCnpj("05.451.308/0001-77");
-        companhia.setStatus(CompanhiaAereaStatus.ATIVA);
-        companhia = companhiaAereaService.salvarCompanhia(companhia);
+        Voo voo = vooService.criarVoo(montarVooDTO(
+                piloto, companhia, "VOO500", "GRU", "GIG",
+                LocalDateTime.now().plusHours(2).toString()));
 
-        // Criar voo
-        Voo voo = new Voo();
-        voo.setPiloto(piloto);
-        voo.setCompanhia(companhia);
-        voo.setCodigo("VOO500");
-        voo.setOrigem("GRU");
-        voo.setDestino("GIG");
-        voo.setStatus(VooStatus.AGENDADO);
-        voo.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(2));
+        // cancelarVoo agora recebe VooDTO com motivoCancelamento
+        VooDTO motivoDTO = new VooDTO(
+                null, null, null, null, null, null,
+                "Mau tempo", // motivoCancelamento
+                null, null, null, null, null);
 
-        voo = vooService.criarVoo(voo);
+        Voo cancelado = vooService.cancelarVoo(voo.getId(), motivoDTO);
 
-        // Executar cancelamento
-        Voo cancelado = vooService.cancelarVoo(voo.getId(), "Mau tempo");
-
-        // Validações
         assertEquals(VooStatus.CANCELADO, cancelado.getStatus());
         assertEquals("Mau tempo", cancelado.getMotivoCancelamento());
     }
@@ -444,8 +374,13 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve lançar erro sem motivo de cancelamento")
     void deveLancarErroSemMotivoCancelamento() {
 
+        VooDTO motivoVazio = new VooDTO(
+                null, null, null, null, null, null,
+                "", // motivoCancelamento vazio
+                null, null, null, null, null);
+
         RuntimeException e = assertThrows(RuntimeException.class,
-                () -> vooService.cancelarVoo(1L, ""));
+                () -> vooService.cancelarVoo(1L, motivoVazio));
 
         assertEquals("Motivo do cancelamento é obrigatório", e.getMessage());
     }
@@ -463,7 +398,12 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve buscar por status")
     void deveBuscarPorStatus() {
 
-        List<Voo> encontrados = vooService.buscarPorStatus(VooStatus.AGENDADO);
+        // buscarPorStatus agora recebe VooDTO com campo status preenchido
+        VooDTO statusDTO = new VooDTO(
+                null, null, null, null, null, null,
+                null, null, null, null, null, "AGENDADO");
+
+        List<Voo> encontrados = vooService.buscarPorStatus(statusDTO);
 
         assertEquals(true, encontrados != null);
     }
@@ -472,26 +412,12 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve buscar voos por piloto")
     void deveBuscarPorPiloto() {
 
-        Piloto piloto = new Piloto();
-        piloto.setNome("João");
-        piloto.setCpf("111.444.777-35");
-        piloto.setStatus(PilotoStatus.ATIVO);
-        piloto = pilotoService.salvarPiloto(piloto);
+        var piloto = criarPilotoAtivo("João", "111.444.777-35");
+        var companhia = criarCompanhiaAtiva("Azul", "05.451.308/0001-77");
 
-        CompanhiaAerea companhia = new CompanhiaAerea();
-        companhia.setNome("Azul");
-        companhia.setCnpj("05.451.308/0001-77");
-        companhia.setStatus(CompanhiaAereaStatus.ATIVA);
-        companhia = companhiaAereaService.salvarCompanhia(companhia);
-
-        Voo voo = new Voo();
-        voo.setPiloto(piloto);
-        voo.setCompanhia(companhia);
-        voo.setCodigo("BUS001");
-        voo.setOrigem("GRU");
-        voo.setDestino("SSA");
-        voo.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(3));
-        vooService.criarVoo(voo);
+        vooService.criarVoo(montarVooDTO(
+                piloto, companhia, "BUS001", "GRU", "SSA",
+                LocalDateTime.now().plusHours(3).toString()));
 
         List<Voo> encontrados = vooService.buscarPorPiloto(piloto.getId());
 
@@ -502,26 +428,12 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve buscar voos por companhia")
     void deveBuscarPorCompanhia() {
 
-        Piloto piloto = new Piloto();
-        piloto.setNome("Carlos");
-        piloto.setCpf("111.444.777-35");
-        piloto.setStatus(PilotoStatus.ATIVO);
-        piloto = pilotoService.salvarPiloto(piloto);
+        var piloto = criarPilotoAtivo("Carlos", "111.444.777-35");
+        var companhia = criarCompanhiaAtiva("Gol", "05.451.308/0001-77");
 
-        CompanhiaAerea companhia = new CompanhiaAerea();
-        companhia.setNome("Gol");
-        companhia.setCnpj("05.451.308/0001-77");
-        companhia.setStatus(CompanhiaAereaStatus.ATIVA);
-        companhia = companhiaAereaService.salvarCompanhia(companhia);
-
-        Voo voo = new Voo();
-        voo.setPiloto(piloto);
-        voo.setCompanhia(companhia);
-        voo.setCodigo("BUS002");
-        voo.setOrigem("GRU");
-        voo.setDestino("POA");
-        voo.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(4));
-        vooService.criarVoo(voo);
+        vooService.criarVoo(montarVooDTO(
+                piloto, companhia, "BUS002", "GRU", "POA",
+                LocalDateTime.now().plusHours(4).toString()));
 
         List<Voo> encontrados = vooService.buscarPorCompanhia(companhia.getId());
 
@@ -532,39 +444,23 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve atualizar voo com sucesso")
     void deveAtualizarVooComSucesso() {
 
-        // Criar e salvar piloto
-        Piloto piloto = new Piloto();
-        piloto.setNome("João");
-        piloto.setCpf("11144477735");
-        piloto.setStatus(PilotoStatus.ATIVO);
-        piloto = pilotoService.salvarPiloto(piloto);
+        var piloto = criarPilotoAtivo("João", "111.444.777-35");
+        var companhia = criarCompanhiaAtiva("LATAM", "05.451.308/0001-77");
 
-        // Criar e salvar companhia
-        CompanhiaAerea companhia = new CompanhiaAerea();
-        companhia.setNome("LATAM");
-        companhia.setCnpj("05.451.308/0001-77");
-        companhia.setStatus(CompanhiaAereaStatus.ATIVA);
-        companhia = companhiaAereaService.salvarCompanhia(companhia);
+        Voo voo = vooService.criarVoo(montarVooDTO(
+                piloto, companhia, "VOO600", "GRU", "GIG",
+                LocalDateTime.now().plusHours(5).toString()));
 
-        // Criar voo inicial
-        Voo voo = new Voo();
-        voo.setCodigo("VOO500");
-        voo.setOrigem("GRU");
-        voo.setDestino("GIG");
-        voo.setStatus(VooStatus.AGENDADO);
-        voo.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(5));
-        voo.setPiloto(piloto);
-        voo.setCompanhia(companhia);
+        // atualizarVoo agora recebe VooDTO com horarios e status
+        VooDTO atualizadoDTO = new VooDTO(
+                null, null, null, null, null, null, null,
+                null, null,
+                LocalDateTime.now().plusHours(6).toString(), // horarioPartidaReal
+                LocalDateTime.now().plusHours(10).toString(), // horarioChegadaReal
+                "CONCLUIDO" // status
+        );
 
-        voo = vooService.criarVoo(voo);
-
-        // Criar objeto com dados atualizados
-        Voo atualizado = new Voo();
-        atualizado.setStatus(VooStatus.CONCLUIDO);
-        atualizado.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(10));
-
-        // Atualizar
-        Voo retorno = vooService.atualizarVoo(voo.getId(), atualizado);
+        Voo retorno = vooService.atualizarVoo(voo.getId(), atualizadoDTO);
 
         assertEquals(VooStatus.CONCLUIDO, retorno.getStatus());
     }
@@ -573,13 +469,16 @@ public class VooServiceIntegrationTest {
     @DisplayName("Deve lançar erro ao atualizar voo inexistente")
     void deveLancarErroAtualizarVooNaoEncontrado() {
 
-        Voo atualizado = new Voo();
-        atualizado.setStatus(VooStatus.CONCLUIDO);
-        atualizado.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(5));
+        VooDTO atualizadoDTO = new VooDTO(
+                null, null, null, null, null, null, null,
+                null, null,
+                LocalDateTime.now().plusHours(1).toString(),
+                LocalDateTime.now().plusHours(5).toString(),
+                "CONCLUIDO");
 
         RuntimeException e = assertThrows(
                 RuntimeException.class,
-                () -> vooService.atualizarVoo(999L, atualizado));
+                () -> vooService.atualizarVoo(999L, atualizadoDTO));
 
         assertEquals("Voo não encontrado", e.getMessage());
     }

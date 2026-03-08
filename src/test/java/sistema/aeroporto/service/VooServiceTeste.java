@@ -1,6 +1,7 @@
 package sistema.aeroporto.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDateTime;
@@ -13,6 +14,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import sistema.aeroporto.dto.CompanhiaAereaDTO;
+import sistema.aeroporto.dto.PilotoDTO;
+import sistema.aeroporto.dto.VooDTO;
 import sistema.aeroporto.model.CompanhiaAerea;
 import sistema.aeroporto.model.Piloto;
 import sistema.aeroporto.model.Voo;
@@ -25,255 +29,427 @@ import sistema.aeroporto.repository.VooRepository;
 
 public class VooServiceTeste {
 
-    @InjectMocks
-    private VooService vooService;
+        @InjectMocks
+        private VooService vooService;
 
-    @Mock
-    private VooRepository vooRepository;
+        @Mock
+        private VooRepository vooRepository;
 
-    @Mock
-    private PilotoRepository pilotoRepository;
+        @Mock
+        private PilotoRepository pilotoRepository;
 
-    @Mock
-    private CompanhiaAereaRepository companhiaAereaRepository;
+        @Mock
+        private CompanhiaAereaRepository companhiaAereaRepository;
 
-    private Piloto pilotoAtivo;
-    private CompanhiaAerea companhiaAtiva;
-    private Voo voo;
+        // -------------------------------------------------------------------------
+        // Objetos reutilizados nos testes
+        // -------------------------------------------------------------------------
 
-    @BeforeEach
-    void setup() {
-        MockitoAnnotations.openMocks(this);
+        private Piloto pilotoAtivo;
+        private Piloto pilotoInativo;
+        private CompanhiaAerea companhiaAtiva;
+        private VooDTO vooDTO;
 
-        pilotoAtivo = new Piloto();
-        pilotoAtivo.setId(1L);
-        pilotoAtivo.setStatus(PilotoStatus.ATIVO);
+        private static final String CPF = "11144477735";
+        private static final String CNPJ = "05.451.308/0001-77";
+        private static final String CODIGO_VOO = "VOO001";
 
-        companhiaAtiva = new CompanhiaAerea();
-        companhiaAtiva.setId(10L);
-        companhiaAtiva.setStatus(CompanhiaAereaStatus.ATIVA);
+        @BeforeEach
+        void setup() {
+                MockitoAnnotations.openMocks(this);
 
-        voo = new Voo();
-        voo.setId(5L);
-        voo.setCodigo("VOO001");
-        voo.setPiloto(pilotoAtivo);
-        voo.setCompanhia(companhiaAtiva);
-        voo.setOrigem("São Paulo");
-        voo.setDestino("Rio de Janeiro");
-        voo.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(2));
-    }
-    
-    @Test
-    void deveCriarVooComSucesso() {
-        when(pilotoRepository.findById(1L)).thenReturn(Optional.of(pilotoAtivo));
-        when(vooRepository.findByPiloto_Id(1L)).thenReturn(List.of());
-        when(companhiaAereaRepository.findById(10L)).thenReturn(Optional.of(companhiaAtiva));
-        when(vooRepository.existsByCodigo("VOO001")).thenReturn(false);
-        when(vooRepository.save(any(Voo.class))).thenAnswer(i -> i.getArgument(0));
+                // --- Entidades retornadas pelos mocks de repositório ---
+                pilotoAtivo = new Piloto();
+                pilotoAtivo.setId(1L);
+                pilotoAtivo.setNome("João");
+                pilotoAtivo.setCpf(CPF);
+                pilotoAtivo.setStatus(PilotoStatus.ATIVO);
 
-        Voo criado = vooService.criarVoo(voo);
+                pilotoInativo = new Piloto();
+                pilotoInativo.setId(2L);
+                pilotoInativo.setNome("Maria");
+                pilotoInativo.setCpf(CPF);
+                pilotoInativo.setStatus(PilotoStatus.INATIVO);
 
-        assertEquals(VooStatus.AGENDADO, criado.getStatus());
-    }
+                companhiaAtiva = new CompanhiaAerea();
+                companhiaAtiva.setId(10L);
+                companhiaAtiva.setNome("Azul");
+                companhiaAtiva.setCnpj(CNPJ);
+                companhiaAtiva.setStatus(CompanhiaAereaStatus.ATIVA);
 
-    @Test
-    void deveLancarErroQuandoPilotoNaoExiste() {
-        when(pilotoRepository.findById(1L)).thenReturn(Optional.empty());
+                // --- DTO usado para criar voo ---
+                // PilotoDTO e CompanhiaAereaDTO aninhados com CPF/CNPJ que o service usa para
+                // buscar
+                PilotoDTO pilotoDTO = new PilotoDTO(
+                                "1", "João", "30", "M", CPF, "PPL", null, PilotoStatus.ATIVO.name());
+                CompanhiaAereaDTO companhiaDTO = new CompanhiaAereaDTO(
+                                "10", "Azul", CNPJ, true, CompanhiaAereaStatus.ATIVA.name());
 
-        RuntimeException e = assertThrows(RuntimeException.class, () -> vooService.criarVoo(voo));
-        assertEquals("Piloto não encontrado", e.getMessage());
-    }
+                vooDTO = new VooDTO(
+                                null,
+                                pilotoDTO,
+                                companhiaDTO,
+                                CODIGO_VOO,
+                                "São Paulo",
+                                "Rio de Janeiro",
+                                null,
+                                LocalDateTime.now().plusHours(2).toString(),
+                                LocalDateTime.now().plusHours(4).toString(),
+                                null,
+                                null,
+                                VooStatus.AGENDADO.name());
+        }
 
-    @Test
-    void deveLancarErroQuandoPilotoInativo() {
-        pilotoAtivo.setStatus(PilotoStatus.INATIVO);
-        when(pilotoRepository.findById(1L)).thenReturn(Optional.of(pilotoAtivo));
+        // =========================================================================
+        // criarVoo
+        // =========================================================================
 
-        RuntimeException e = assertThrows(RuntimeException.class, () -> vooService.criarVoo(voo));
-        assertEquals("Piloto não está apto para voar", e.getMessage());
-    }
+        @Test
+        void deveCriarVooComSucesso() {
 
-    @Test
-    void deveLancarErroPorConflitoDeHorario() {
-        Voo outro = new Voo();
-        outro.setHorarioPartidaPrevisto(voo.getHorarioPartidaPrevisto());
+                Voo vooSalvo = new Voo();
+                vooSalvo.setId(5L);
+                vooSalvo.setCodigo(CODIGO_VOO);
+                vooSalvo.setStatus(VooStatus.AGENDADO);
 
-        when(pilotoRepository.findById(1L)).thenReturn(Optional.of(pilotoAtivo));
-        when(vooRepository.findByPiloto_Id(1L)).thenReturn(List.of(outro));
+                // VooService.criarVoo busca piloto por CPF e companhia por CNPJ
+                when(pilotoRepository.findByCpf(CPF)).thenReturn(Optional.of(pilotoAtivo));
+                when(vooRepository.findByPiloto_Id(1L)).thenReturn(List.of());
+                when(companhiaAereaRepository.findByCnpj(CNPJ)).thenReturn(Optional.of(companhiaAtiva));
+                when(vooRepository.existsByCodigo(CODIGO_VOO)).thenReturn(false);
+                when(vooRepository.save(any(Voo.class))).thenReturn(vooSalvo);
 
-        RuntimeException e = assertThrows(RuntimeException.class, () -> vooService.criarVoo(voo));
-        assertEquals("Piloto já está escalado para outro voo nesse horário", e.getMessage());
-    }
+                Voo criado = vooService.criarVoo(vooDTO);
 
-    @Test
-    void deveLancarErroQuandoCompanhiaNaoExiste() {
-        when(pilotoRepository.findById(1L)).thenReturn(Optional.of(pilotoAtivo));
-        when(vooRepository.findByPiloto_Id(1L)).thenReturn(List.of());
-        when(companhiaAereaRepository.findById(10L)).thenReturn(Optional.empty());
+                assertNotNull(criado);
+                assertEquals(CODIGO_VOO, criado.getCodigo());
+                assertEquals(VooStatus.AGENDADO, criado.getStatus());
+        }
 
-        RuntimeException e = assertThrows(RuntimeException.class, () -> vooService.criarVoo(voo));
-        assertEquals("Companhia aérea não encontrada", e.getMessage());
-    }
+        @Test
+        void deveLancarErroQuandoPilotoNaoExiste() {
 
-    @Test
-    void deveLancarErroQuandoCompanhiaInativa() {
-        companhiaAtiva.setStatus(CompanhiaAereaStatus.INATIVA);
+                when(pilotoRepository.findByCpf(CPF)).thenReturn(Optional.empty());
 
-        when(pilotoRepository.findById(1L)).thenReturn(Optional.of(pilotoAtivo));
-        when(vooRepository.findByPiloto_Id(1L)).thenReturn(List.of());
-        when(companhiaAereaRepository.findById(10L)).thenReturn(Optional.of(companhiaAtiva));
+                RuntimeException e = assertThrows(RuntimeException.class,
+                                () -> vooService.criarVoo(vooDTO));
 
-        RuntimeException e = assertThrows(RuntimeException.class, () -> vooService.criarVoo(voo));
-        assertEquals("Companhia não está ativa", e.getMessage());
-    }
+                assertEquals("Piloto não encontrado", e.getMessage());
+        }
 
-    @Test
-    void deveLancarErroCodigoDuplicado() {
-        when(pilotoRepository.findById(1L)).thenReturn(Optional.of(pilotoAtivo));
-        when(vooRepository.findByPiloto_Id(1L)).thenReturn(List.of());
-        when(companhiaAereaRepository.findById(10L)).thenReturn(Optional.of(companhiaAtiva));
-        when(vooRepository.existsByCodigo("VOO001")).thenReturn(true);
+        @Test
+        void deveLancarErroQuandoOrigemIgualDestino() {
 
-        RuntimeException e = assertThrows(RuntimeException.class, () -> vooService.criarVoo(voo));
-        assertEquals("Código de voo já existente", e.getMessage());
-    }
+                VooDTO vooDTOInvalido = new VooDTO(
+                                null,
+                                vooDTO.piloto(),
+                                vooDTO.companhia(),
+                                CODIGO_VOO,
+                                "Rio de Janeiro", // origem == destino
+                                "Rio de Janeiro",
+                                null,
+                                LocalDateTime.now().plusHours(2).toString(),
+                                null, null, null, null);
 
-    @Test
-    void deveLancarErroOrigemIgualDestino() {
-        voo.setOrigem("Rio");
-        voo.setDestino("Rio");
+                RuntimeException e = assertThrows(RuntimeException.class,
+                                () -> vooService.criarVoo(vooDTOInvalido));
 
-        when(pilotoRepository.findById(1L)).thenReturn(Optional.of(pilotoAtivo));
+                assertEquals("Origem e destino não podem ser iguais", e.getMessage());
+        }
 
-        RuntimeException e = assertThrows(RuntimeException.class, () -> vooService.criarVoo(voo));
-        assertEquals("Origem e destino não podem ser iguais", e.getMessage());
-    }
+        @Test
+        void deveLancarErroQuandoHorarioNoPassado() {
 
-    @Test
-    void deveLancarErroHorarioNoPassado() {
-        voo.setHorarioPartidaPrevisto(LocalDateTime.now().minusHours(1));
+                VooDTO vooDTOInvalido = new VooDTO(
+                                null,
+                                vooDTO.piloto(),
+                                vooDTO.companhia(),
+                                CODIGO_VOO,
+                                "São Paulo",
+                                "Rio de Janeiro",
+                                null,
+                                LocalDateTime.now().minusHours(1).toString(), // passado
+                                null, null, null, null);
 
-        when(pilotoRepository.findById(1L)).thenReturn(Optional.of(pilotoAtivo));
+                RuntimeException e = assertThrows(RuntimeException.class,
+                                () -> vooService.criarVoo(vooDTOInvalido));
 
-        RuntimeException e = assertThrows(RuntimeException.class, () -> vooService.criarVoo(voo));
-        assertEquals("Horário de partida não pode ser no passado", e.getMessage());
-    }
+                assertEquals("Horário de partida não pode ser no passado", e.getMessage());
+        }
 
-    @Test
-    void deveIniciarVooComSucesso() {
-        when(vooRepository.findById(5L)).thenReturn(Optional.of(voo));
-        when(vooRepository.save(any(Voo.class))).thenAnswer(i -> i.getArgument(0));
+        @Test
+        void deveLancarErroConflitoDeHorario() {
 
-        Voo iniciado = vooService.iniciarVoo(5L);
+                Voo vooExistente = new Voo();
+                vooExistente.setHorarioPartidaPrevisto(
+                                LocalDateTime.parse(vooDTO.horarioPartidaPrevisto()));
 
-        assertEquals(VooStatus.EM_VOO, iniciado.getStatus());
-        assertNotNull(iniciado.getHorarioPartidaReal());
-    }
+                when(pilotoRepository.findByCpf(CPF)).thenReturn(Optional.of(pilotoAtivo));
+                when(vooRepository.findByPiloto_Id(1L)).thenReturn(List.of(vooExistente));
 
-    @Test
-    void deveLancarErroAoIniciarVooNaoEncontrado() {
-        when(vooRepository.findById(5L)).thenReturn(Optional.empty());
+                RuntimeException e = assertThrows(RuntimeException.class,
+                                () -> vooService.criarVoo(vooDTO));
 
-        RuntimeException e = assertThrows(RuntimeException.class, () -> vooService.iniciarVoo(5L));
-        assertEquals("Voo não encontrado", e.getMessage());
-    }
+                assertEquals("Piloto já está escalado para outro voo nesse horário", e.getMessage());
+        }
 
-    @Test
-    void deveLancarErroPilotoInativoAoIniciar() {
-        pilotoAtivo.setStatus(PilotoStatus.INATIVO);
-        voo.setPiloto(pilotoAtivo);
+        @Test
+        void deveLancarErroQuandoCompanhiaNaoExiste() {
 
-        when(vooRepository.findById(5L)).thenReturn(Optional.of(voo));
+                when(pilotoRepository.findByCpf(CPF)).thenReturn(Optional.of(pilotoAtivo));
+                when(vooRepository.findByPiloto_Id(1L)).thenReturn(List.of());
+                when(companhiaAereaRepository.findByCnpj(CNPJ)).thenReturn(Optional.empty());
 
-        RuntimeException e = assertThrows(RuntimeException.class, () -> vooService.iniciarVoo(5L));
-        assertEquals("Piloto não pode iniciar o voo", e.getMessage());
-    }
+                RuntimeException e = assertThrows(RuntimeException.class,
+                                () -> vooService.criarVoo(vooDTO));
 
-    @Test
-    void deveCancelarVooComSucesso() {
-        when(vooRepository.findById(5L)).thenReturn(Optional.of(voo));
-        when(vooRepository.save(any(Voo.class))).thenAnswer(i -> i.getArgument(0));
+                assertEquals("Companhia aérea não encontrada", e.getMessage());
+        }
 
-        Voo cancelado = vooService.cancelarVoo(5L, "Mau tempo");
+        @Test
+        void deveLancarErroQuandoCompanhiaInativa() {
 
-        assertEquals(VooStatus.CANCELADO, cancelado.getStatus());
-        assertEquals("Mau tempo", cancelado.getMotivoCancelamento());
-    }
+                CompanhiaAerea companhiaInativa = new CompanhiaAerea();
+                companhiaInativa.setId(10L);
+                companhiaInativa.setCnpj(CNPJ);
+                companhiaInativa.setStatus(CompanhiaAereaStatus.INATIVA);
 
-    @Test
-    void deveLancarErroSemMotivoCancelamento() {
-        RuntimeException e = assertThrows(RuntimeException.class, () -> vooService.cancelarVoo(5L, ""));
-        assertEquals("Motivo do cancelamento é obrigatório", e.getMessage());
-    }
+                when(pilotoRepository.findByCpf(CPF)).thenReturn(Optional.of(pilotoAtivo));
+                when(vooRepository.findByPiloto_Id(1L)).thenReturn(List.of());
+                when(companhiaAereaRepository.findByCnpj(CNPJ)).thenReturn(Optional.of(companhiaInativa));
 
-    @Test
-    void deveLancarErroCancelamentoVooNaoEncontrado() {
-        when(vooRepository.findById(5L)).thenReturn(Optional.empty());
+                RuntimeException e = assertThrows(RuntimeException.class,
+                                () -> vooService.criarVoo(vooDTO));
 
-        RuntimeException e = assertThrows(RuntimeException.class, () -> vooService.cancelarVoo(5L, "Motivo"));
-        assertEquals("Voo não encontrado", e.getMessage());
-    }
+                assertEquals("Companhia não está ativa", e.getMessage());
+        }
 
-    @Test
-    void deveListarTodosVoos() {
-        when(vooRepository.findAll()).thenReturn(List.of(new Voo(), new Voo()));
+        @Test
+        void deveLancarErroCodigoDuplicado() {
 
-        List<Voo> lista = vooService.listarTodos();
+                when(pilotoRepository.findByCpf(CPF)).thenReturn(Optional.of(pilotoAtivo));
+                when(vooRepository.findByPiloto_Id(1L)).thenReturn(List.of());
+                when(companhiaAereaRepository.findByCnpj(CNPJ)).thenReturn(Optional.of(companhiaAtiva));
+                when(vooRepository.existsByCodigo(CODIGO_VOO)).thenReturn(true);
 
-        assertEquals(2, lista.size());
-    }
+                RuntimeException e = assertThrows(RuntimeException.class,
+                                () -> vooService.criarVoo(vooDTO));
 
-    @Test
-    void deveBuscarPorStatus() {
-        when(vooRepository.findByStatus(VooStatus.AGENDADO))
-                .thenReturn(List.of(voo));
+                assertEquals("Código de voo já existente", e.getMessage());
+        }
 
-        List<Voo> encontrados = vooService.buscarPorStatus(VooStatus.AGENDADO);
+        // =========================================================================
+        // iniciarVoo
+        // =========================================================================
 
-        assertEquals(1, encontrados.size());
-    }
+        @Test
+        void deveIniciarVooComSucesso() {
 
-    @Test
-    void deveBuscarPorPiloto() {
-        when(vooRepository.findByPiloto_Id(1L))
-                .thenReturn(List.of(voo));
+                Voo voo = new Voo();
+                voo.setId(5L);
+                voo.setStatus(VooStatus.AGENDADO);
+                voo.setPiloto(pilotoAtivo);
 
-        List<Voo> encontrados = vooService.buscarPorPiloto(1L);
+                when(vooRepository.findById(5L)).thenReturn(Optional.of(voo));
+                when(vooRepository.save(any(Voo.class))).thenAnswer(i -> i.getArgument(0));
 
-        assertEquals(1, encontrados.size());
-    }
+                Voo iniciado = vooService.iniciarVoo(5L);
 
-    @Test
-    void deveBuscarPorCompanhia() {
-        when(vooRepository.findByCompanhia_Id(10L))
-                .thenReturn(List.of(voo));
+                assertEquals(VooStatus.EM_VOO, iniciado.getStatus());
+                assertNotNull(iniciado.getHorarioPartidaReal());
+        }
 
-        List<Voo> encontrados = vooService.buscarPorCompanhia(10L);
+        @Test
+        void deveLancarErroAoIniciarVooNaoEncontrado() {
 
-        assertEquals(1, encontrados.size());
-    }
+                when(vooRepository.findById(99L)).thenReturn(Optional.empty());
 
-    @Test
-    void deveAtualizarVooComSucesso() {
-        Voo atualizado = new Voo();
-        atualizado.setHorarioPartidaPrevisto(LocalDateTime.now().plusHours(10));
-        atualizado.setHorarioChegadaPrevisto(LocalDateTime.now().plusHours(12));
-        atualizado.setStatus(VooStatus.CONCLUIDO);
+                RuntimeException e = assertThrows(RuntimeException.class,
+                                () -> vooService.iniciarVoo(99L));
 
-        when(vooRepository.findById(5L)).thenReturn(Optional.of(voo));
-        when(vooRepository.save(any(Voo.class))).thenAnswer(i -> i.getArgument(0));
+                assertEquals("Voo não encontrado", e.getMessage());
+        }
 
-        Voo retorno = vooService.atualizarVoo(5L, atualizado);
+        @Test
+        void deveLancarErroPilotoInativoAoIniciar() {
 
-        assertEquals(VooStatus.CONCLUIDO, retorno.getStatus());
-        assertEquals(atualizado.getHorarioPartidaPrevisto(), retorno.getHorarioPartidaPrevisto());
-    }
+                Voo voo = new Voo();
+                voo.setId(5L);
+                voo.setStatus(VooStatus.AGENDADO);
+                voo.setPiloto(pilotoInativo); // piloto INATIVO
 
-    @Test
-    void deveLancarErroAtualizarVooNaoEncontrado() {
-        when(vooRepository.findById(5L)).thenReturn(Optional.empty());
+                when(vooRepository.findById(5L)).thenReturn(Optional.of(voo));
 
-        RuntimeException e = assertThrows(RuntimeException.class, () -> vooService.atualizarVoo(5L, voo));
-        assertEquals("Voo não encontrado", e.getMessage());
-    }
+                RuntimeException e = assertThrows(RuntimeException.class,
+                                () -> vooService.iniciarVoo(5L));
+
+                assertEquals("Piloto não pode iniciar o voo", e.getMessage());
+        }
+
+        @Test
+        void deveLancarErroIniciarVooNaoAgendado() {
+
+                Voo voo = new Voo();
+                voo.setId(5L);
+                voo.setStatus(VooStatus.CANCELADO); // não é AGENDADO
+                voo.setPiloto(pilotoAtivo);
+
+                when(vooRepository.findById(5L)).thenReturn(Optional.of(voo));
+
+                RuntimeException e = assertThrows(RuntimeException.class,
+                                () -> vooService.iniciarVoo(5L));
+
+                assertEquals("Somente voos agendados podem ser iniciados", e.getMessage());
+        }
+
+        // =========================================================================
+        // cancelarVoo
+        // =========================================================================
+
+        @Test
+        void deveCancelarVooComSucesso() {
+
+                Voo voo = new Voo();
+                voo.setId(5L);
+                voo.setStatus(VooStatus.AGENDADO);
+
+                VooDTO motivoDTO = new VooDTO(
+                                null, null, null, null, null, null,
+                                "Mau tempo",
+                                null, null, null, null, null);
+
+                when(vooRepository.findById(5L)).thenReturn(Optional.of(voo));
+                when(vooRepository.save(any(Voo.class))).thenAnswer(i -> i.getArgument(0));
+
+                Voo cancelado = vooService.cancelarVoo(5L, motivoDTO);
+
+                assertEquals(VooStatus.CANCELADO, cancelado.getStatus());
+                assertEquals("Mau tempo", cancelado.getMotivoCancelamento());
+        }
+
+        @Test
+        void deveLancarErroSemMotivoCancelamento() {
+
+                VooDTO motivoVazio = new VooDTO(
+                                null, null, null, null, null, null,
+                                "",
+                                null, null, null, null, null);
+
+                RuntimeException e = assertThrows(RuntimeException.class,
+                                () -> vooService.cancelarVoo(5L, motivoVazio));
+
+                assertEquals("Motivo do cancelamento é obrigatório", e.getMessage());
+        }
+
+        @Test
+        void deveLancarErroCancelamentoVooNaoEncontrado() {
+
+                VooDTO motivoDTO = new VooDTO(
+                                null, null, null, null, null, null,
+                                "Motivo qualquer",
+                                null, null, null, null, null);
+
+                when(vooRepository.findById(99L)).thenReturn(Optional.empty());
+
+                RuntimeException e = assertThrows(RuntimeException.class,
+                                () -> vooService.cancelarVoo(99L, motivoDTO));
+
+                assertEquals("Voo não encontrado", e.getMessage());
+        }
+
+        // =========================================================================
+        // listarTodos / buscarPorStatus / buscarPorPiloto / buscarPorCompanhia
+        // =========================================================================
+
+        @Test
+        void deveListarTodosVoos() {
+
+                when(vooRepository.findAll()).thenReturn(List.of(new Voo(), new Voo()));
+
+                List<Voo> lista = vooService.listarTodos();
+
+                assertEquals(2, lista.size());
+        }
+
+        @Test
+        void deveBuscarPorStatus() {
+
+                Voo voo = new Voo();
+                voo.setStatus(VooStatus.AGENDADO);
+
+                when(vooRepository.findByStatus(VooStatus.AGENDADO)).thenReturn(List.of(voo));
+
+                VooDTO statusDTO = new VooDTO(
+                                null, null, null, null, null, null,
+                                null, null, null, null, null, "AGENDADO");
+
+                List<Voo> encontrados = vooService.buscarPorStatus(statusDTO);
+
+                assertEquals(1, encontrados.size());
+                assertEquals(VooStatus.AGENDADO, encontrados.get(0).getStatus());
+        }
+
+        @Test
+        void deveBuscarPorPiloto() {
+
+                when(vooRepository.findByPiloto_Id(1L)).thenReturn(List.of(new Voo()));
+
+                List<Voo> encontrados = vooService.buscarPorPiloto(1L);
+
+                assertEquals(1, encontrados.size());
+        }
+
+        @Test
+        void deveBuscarPorCompanhia() {
+
+                when(vooRepository.findByCompanhia_Id(10L)).thenReturn(List.of(new Voo()));
+
+                List<Voo> encontrados = vooService.buscarPorCompanhia(10L);
+
+                assertEquals(1, encontrados.size());
+        }
+
+        // =========================================================================
+        // atualizarVoo
+        // =========================================================================
+
+        @Test
+        void deveAtualizarVooComSucesso() {
+
+                Voo vooExistente = new Voo();
+                vooExistente.setId(5L);
+                vooExistente.setStatus(VooStatus.AGENDADO);
+
+                VooDTO atualizadoDTO = new VooDTO(
+                                null, null, null, null, null, null, null,
+                                null, null,
+                                LocalDateTime.now().plusHours(6).toString(),
+                                LocalDateTime.now().plusHours(10).toString(),
+                                "CONCLUIDO");
+
+                when(vooRepository.findById(5L)).thenReturn(Optional.of(vooExistente));
+                when(vooRepository.save(any(Voo.class))).thenAnswer(i -> i.getArgument(0));
+
+                Voo retorno = vooService.atualizarVoo(5L, atualizadoDTO);
+
+                assertEquals(VooStatus.CONCLUIDO, retorno.getStatus());
+        }
+
+        @Test
+        void deveLancarErroAtualizarVooNaoEncontrado() {
+
+                VooDTO atualizadoDTO = new VooDTO(
+                                null, null, null, null, null, null, null,
+                                null, null,
+                                LocalDateTime.now().plusHours(1).toString(),
+                                LocalDateTime.now().plusHours(5).toString(),
+                                "CONCLUIDO");
+
+                when(vooRepository.findById(99L)).thenReturn(Optional.empty());
+
+                RuntimeException e = assertThrows(RuntimeException.class,
+                                () -> vooService.atualizarVoo(99L, atualizadoDTO));
+
+                assertEquals("Voo não encontrado", e.getMessage());
+        }
 }

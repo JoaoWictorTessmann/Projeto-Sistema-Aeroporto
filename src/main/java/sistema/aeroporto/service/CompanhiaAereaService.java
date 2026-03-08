@@ -18,12 +18,12 @@ public class CompanhiaAereaService {
     @Autowired
     private CompanhiaAereaRepository companhiaAereaRepository;
 
-
     // Buscar companhia por ID
     public CompanhiaAerea buscarPorId(Long id) {
         return companhiaAereaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Companhia não encontrada"));
     }
+
     // Listar todas as companhias aéreas
     public List<CompanhiaAerea> listarTodasCompanhias() {
         return companhiaAereaRepository.findAll();
@@ -54,8 +54,14 @@ public class CompanhiaAereaService {
         companhia.setCnpj(companhiaDTO.cnpj());
         companhia.setDataFundacao(LocalDate.now());
         companhia.setSeguroAeronave(companhiaDTO.seguroAeronave());
-        companhia.setStatus(CompanhiaAereaStatus.ATIVA);
+
         
+        if (companhiaDTO.status() != null && !companhiaDTO.status().isBlank()) {
+            companhia.setStatus(CompanhiaAereaStatus.valueOf(companhiaDTO.status().toUpperCase()));
+        } else {
+            companhia.setStatus(CompanhiaAereaStatus.ATIVA);
+        }
+
         return companhiaAereaRepository.save(companhia);
     }
 
@@ -75,8 +81,7 @@ public class CompanhiaAereaService {
         companhiaExistente.setNome(companhiaAtualizada.nome());
         companhiaExistente.setCnpj(companhiaAtualizada.cnpj());
         companhiaExistente.setSeguroAeronave(companhiaAtualizada.seguroAeronave());
-        companhiaExistente.setStatus(CompanhiaAereaStatus.valueOf(companhiaAtualizada.status().toUpperCase())
-    );
+        companhiaExistente.setStatus(CompanhiaAereaStatus.valueOf(companhiaAtualizada.status().toUpperCase()));
 
         return companhiaAereaRepository.save(companhiaExistente);
     }
