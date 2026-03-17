@@ -11,222 +11,167 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import jakarta.transaction.Transactional;
-import sistema.aeroporto.dto.CompanhiaAereaDTO;
-import sistema.aeroporto.model.CompanhiaAerea;
+import sistema.aeroporto.dto.request.CompanhiaAereaRequest;
+import sistema.aeroporto.dto.response.CompanhiaAereaResponse;
 import sistema.aeroporto.model.enums.CompanhiaAereaStatus;
 
 @SpringBootTest
 @Transactional
 public class CompanhiaAereaServiceIntegrationTest {
 
-        @Autowired
-        private CompanhiaAereaService companhiaAereaService;
+    @Autowired
+    private CompanhiaAereaService companhiaAereaService;
 
-        @Test
-        @DisplayName("Deve listar todas as companhias do banco")
-        void deveListarTodasCompanhias() {
-                // arrange
-                CompanhiaAereaDTO companhiaAereaAzuldDto = new CompanhiaAereaDTO(
-                                null, "Azul", "63.141.461/0001-02", true, "Ativa");
-                CompanhiaAereaDTO companhiaAereaGoldDto = new CompanhiaAereaDTO(
-                                null, "Gol", "81.797.711/0001-30", true, "Ativa");
+    @Test
+    @DisplayName("Deve listar todas as companhias do banco")
+    void deveListarTodasCompanhias() {
+        CompanhiaAereaRequest azul = new CompanhiaAereaRequest("Azul", "63.141.461/0001-02", null, true, "ATIVA");
+        CompanhiaAereaRequest gol  = new CompanhiaAereaRequest("Gol",  "81.797.711/0001-30", null, true, "ATIVA");
 
-                companhiaAereaService.salvarCompanhia(companhiaAereaAzuldDto);
-                companhiaAereaService.salvarCompanhia(companhiaAereaGoldDto);
+        companhiaAereaService.salvarCompanhia(azul);
+        companhiaAereaService.salvarCompanhia(gol);
 
-                // act
-                List<CompanhiaAerea> listaDeCompanhias = companhiaAereaService.listarTodasCompanhias();
+        List<CompanhiaAereaResponse> lista = companhiaAereaService.listarTodasCompanhias();
 
-                // assert
-                assertEquals(2, listaDeCompanhias.size());
-                assertEquals("Azul", listaDeCompanhias.get(0).getNome());
-                assertEquals("Gol", listaDeCompanhias.get(1).getNome());
+        assertEquals(2, lista.size());
+        assertEquals("Azul", lista.get(0).nome());
+        assertEquals("Gol",  lista.get(1).nome());
+    }
 
-        }
+    @Test
+    @DisplayName("Deve buscar companhia por nome")
+    void deveBuscarCompanhiaPorNome() {
+        CompanhiaAereaRequest request = new CompanhiaAereaRequest("Azul", "63.141.461/0001-02", null, true, "ATIVA");
+        companhiaAereaService.salvarCompanhia(request);
 
-        @Test
-        @DisplayName("Deve buscar companhia por nome")
-        void deveBuscarCompanhiaPorNome() {
+        CompanhiaAereaResponse response = companhiaAereaService.buscarPorNome("Azul");
 
-                // Arrange
-                CompanhiaAereaDTO companhiaAereaAzulDto = new CompanhiaAereaDTO(
-                                null, "Azul", "63.141.461/0001-02", true, "Ativa");
+        assertEquals("Azul", response.nome());
+    }
 
-                companhiaAereaService.salvarCompanhia(companhiaAereaAzulDto);
+    @Test
+    @DisplayName("Deve falhar ao buscar companhia por nome inexistente")
+    void deveFalharAoBuscarCompanhiaPorNomeInexistente() {
+        CompanhiaAereaRequest request = new CompanhiaAereaRequest("Azul", "63.141.461/0001-02", null, true, "ATIVA");
+        companhiaAereaService.salvarCompanhia(request);
 
-                // Act
-                CompanhiaAerea companhiaEncontrada = companhiaAereaService.buscarPorNome(companhiaAereaAzulDto.nome());
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> companhiaAereaService.buscarPorNome("Gol"));
 
-                // Assert
-                assertEquals("Azul", companhiaEncontrada.getNome());
-        }
+        assertEquals("Companhia não encontrada", exception.getMessage());
+    }
 
-        @Test
-        @DisplayName("Deve falhar ao buscar companhia por nome inexistente")
-        void deveFalharAoBuscarCompanhiaPorNomeInexistente() {
-                // arrange
-                CompanhiaAereaDTO companhiaAereaAzuldDto = new CompanhiaAereaDTO(
-                                null, "Azul", "63.141.461/0001-02", true, "Ativa");
-                companhiaAereaService.salvarCompanhia(companhiaAereaAzuldDto);
+    @Test
+    @DisplayName("Deve buscar companhia por CNPJ")
+    void deveBuscarCompanhiaPorCnpj() {
+        CompanhiaAereaRequest request = new CompanhiaAereaRequest("Azul", "63.141.461/0001-02", null, true, "ATIVA");
+        companhiaAereaService.salvarCompanhia(request);
 
-                // act
-                RuntimeException exception = assertThrows(
-                                RuntimeException.class,
-                                () -> companhiaAereaService.buscarPorNome("Gol"));
+        CompanhiaAereaResponse response = companhiaAereaService.buscarPorCnpj("63.141.461/0001-02");
 
-                // assert
-                assertEquals("Companhia não encontrada", exception.getMessage());
-        }
+        assertEquals("63.141.461/0001-02", response.cnpj());
+    }
 
-        @Test
-        @DisplayName("Deve buscar companhia por CNPJ")
-        void deveBuscarCompanhiaPorCnpj() {
-                // arrange
-                CompanhiaAereaDTO companhiaAereaAzuldDto = new CompanhiaAereaDTO(
-                                null, "Azul", "63.141.461/0001-02", true, "Ativa");
-                companhiaAereaService.salvarCompanhia(companhiaAereaAzuldDto);
+    @Test
+    @DisplayName("Deve falhar ao buscar companhia por CNPJ inexistente")
+    void deveFalharAoBuscarCompanhiaPorCnpjInexistente() {
+        CompanhiaAereaRequest request = new CompanhiaAereaRequest("Azul", "63.141.461/0001-02", null, true, "ATIVA");
+        companhiaAereaService.salvarCompanhia(request);
 
-                // act
-                CompanhiaAerea companhiaEncontrada = companhiaAereaService.buscarPorCnpj("63.141.461/0001-02");
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> companhiaAereaService.buscarPorCnpj("05.451.308/0002-77"));
 
-                // assert
-                assertEquals("63.141.461/0001-02", companhiaEncontrada.getCnpj());
-        }
+        assertEquals("Companhia não encontrada", exception.getMessage());
+    }
 
-        @Test
-        @DisplayName("Deve falhar ao buscar companhia por CNPJ inexistente")
-        void deveFalharAoBuscarCompanhiaPorCnpjInexistente() {
+    @Test
+    @DisplayName("Deve salvar companhia com CNPJ válido")
+    void deveSalvarCompanhiaComCnpjValido() {
+        CompanhiaAereaRequest request = new CompanhiaAereaRequest("Azul", "55.044.476/0001-16", null, true, "ATIVA");
 
-                // arrange
-                CompanhiaAereaDTO companhiaAereaAzuldDto = new CompanhiaAereaDTO(
-                                null, "Azul", "63.141.461/0001-02", true, "Ativa");
-                companhiaAereaService.salvarCompanhia(companhiaAereaAzuldDto);
+        CompanhiaAereaResponse response = companhiaAereaService.salvarCompanhia(request);
 
-                // act
-                RuntimeException exception = assertThrows(
-                                RuntimeException.class,
-                                () -> companhiaAereaService.buscarPorCnpj("05.451.308/0002-77"));
+        assertEquals("55.044.476/0001-16", response.cnpj());
+    }
 
-                // assert
-                assertEquals("Companhia não encontrada", exception.getMessage());
-        }
+    @Test
+    @DisplayName("Deve falhar ao salvar companhia com CNPJ inválido")
+    void deveFalharAoSalvarCompanhiaComCnpjInvalido() {
+        CompanhiaAereaRequest request = new CompanhiaAereaRequest("Azul", "63.141.461/0001-03", null, true, "ATIVA");
 
-        @Test
-        @DisplayName("Deve salvar companhia com CNPJ válido")
-        void deveSalvarCompanhiaComCnpjValido() {
-                // arrange
-                CompanhiaAereaDTO companhiaAereaAzuldDto = new CompanhiaAereaDTO(
-                                null, "Azul", "55.044.476/0001-16", true, "Ativa");
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> companhiaAereaService.salvarCompanhia(request));
 
-                // act
-                CompanhiaAerea companhiaSalva = companhiaAereaService.salvarCompanhia(companhiaAereaAzuldDto);
+        assertEquals("CNPJ inválido", exception.getMessage());
+    }
 
-                // assert
-                assertEquals("55.044.476/0001-16", companhiaSalva.getCnpj());
-        }
+    @Test
+    @DisplayName("Deve falhar ao salvar companhia com CNPJ já existente")
+    void deveFalharAoSalvarCompanhiaComCnpjJaExistente() {
+        CompanhiaAereaRequest azul = new CompanhiaAereaRequest("Azul", "63.141.461/0001-02", null, true, "ATIVA");
+        companhiaAereaService.salvarCompanhia(azul);
 
-        @Test
-        @DisplayName("Deve falhar ao salvar companhia com CNPJ inválido")
-        void deveFalharAoSalvarCompanhiaComCnpjInvalido() {
-                // arrange
-                CompanhiaAereaDTO companhiaAereaAzuldDto = new CompanhiaAereaDTO(
-                                null, "Azul", "63.141.461/0001-03", true, "Ativa");
+        CompanhiaAereaRequest gol = new CompanhiaAereaRequest("Gol", "63.141.461/0001-02", null, true, "ATIVA");
 
-                // act
-                RuntimeException exception = assertThrows(
-                                RuntimeException.class,
-                                () -> companhiaAereaService.salvarCompanhia(companhiaAereaAzuldDto));
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> companhiaAereaService.salvarCompanhia(gol));
 
-                // assert
-                assertEquals("CNPJ inválido", exception.getMessage());
-        }
+        assertEquals("CNPJ já cadastrado", exception.getMessage());
+    }
 
-        @Test
-        @DisplayName("Deve falhar ao salvar companhia com CNPJ já existente")
-        void deveFalharAoSalvarCompanhiaComCnpjJaExistente() {
-                // arrange
-                CompanhiaAereaDTO companhiaAereaAzuldDto = new CompanhiaAereaDTO(
-                                null, "Azul", "63.141.461/0001-02", true, "Ativa");
-                companhiaAereaService.salvarCompanhia(companhiaAereaAzuldDto);
+    @Test
+    @DisplayName("Deve deletar companhia")
+    void deveDeletarCompanhia() {
+        CompanhiaAereaRequest request = new CompanhiaAereaRequest("Azul", "63.141.461/0001-02", null, true, "ATIVA");
+        CompanhiaAereaResponse salva = companhiaAereaService.salvarCompanhia(request);
 
-                CompanhiaAereaDTO companhiaAereaGolDto = new CompanhiaAereaDTO(
-                                null, "Gol", "63.141.461/0001-02", true, "Ativa");
+        companhiaAereaService.deletarCompanhia(salva.id());
 
-                // act
-                RuntimeException exception = assertThrows(
-                                RuntimeException.class,
-                                () -> companhiaAereaService.salvarCompanhia(companhiaAereaGolDto));
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> companhiaAereaService.buscarPorId(salva.id()));
 
-                // assert
-                assertEquals("CNPJ já cadastrado", exception.getMessage());
-        }
+        assertEquals("Companhia não encontrada", exception.getMessage());
+    }
 
-        @Test
-        @DisplayName("Deve deletar companhia")
-        void deveDeletarCompanhia() {
-                // arrange
-                CompanhiaAereaDTO companhiaAereaAzuldDto = new CompanhiaAereaDTO(
-                                null, "Azul", "63.141.461/0001-02", true, "Ativa");
-                CompanhiaAerea companhiaSalva = companhiaAereaService.salvarCompanhia(companhiaAereaAzuldDto);
+    @Test
+    @DisplayName("Deve falhar ao deletar companhia inexistente")
+    void deveFalharAoDeletarCompanhiaInexistente() {
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> companhiaAereaService.deletarCompanhia(666L));
 
-                // act
-                companhiaAereaService.deletarCompanhia(companhiaSalva.getId());
+        assertEquals("Companhia não encontrada", exception.getMessage());
+    }
 
-                // assert
-                RuntimeException exception = assertThrows(
-                                RuntimeException.class,
-                                () -> companhiaAereaService.buscarPorId(companhiaSalva.getId()));
+    @Test
+    @DisplayName("Deve atualizar companhia existente")
+    void deveAtualizarCompanhiaExistente() {
+        CompanhiaAereaRequest original = new CompanhiaAereaRequest("Azul", "63.141.461/0001-02", null, true, "ATIVA");
+        CompanhiaAereaResponse salva = companhiaAereaService.salvarCompanhia(original);
 
-                assertEquals("Companhia não encontrada", exception.getMessage());
-        }
+        CompanhiaAereaRequest atualizacao = new CompanhiaAereaRequest("Azul", "63.141.461/0001-02", null, true, "INATIVA");
+        CompanhiaAereaResponse result = companhiaAereaService.atualizarCompanhia(salva.id(), atualizacao);
 
-        @Test
-        @DisplayName("Deve falhar ao deletar companhia inexistente")
-        void deveFalharAoDeletarCompanhiaInexistente() {
-                // act
-                RuntimeException exception = assertThrows(
-                                RuntimeException.class,
-                                () -> companhiaAereaService.deletarCompanhia(666L));
+        assertEquals(salva.id(), result.id());
+        assertEquals("Azul", result.nome());
+        assertEquals("63.141.461/0001-02", result.cnpj());
+        assertEquals(CompanhiaAereaStatus.INATIVA.name(), result.status());
+    }
 
-                // assert
-                assertEquals("Companhia não encontrada", exception.getMessage());
-        }
+    @Test
+    @DisplayName("Deve falhar ao atualizar companhia inexistente")
+    void deveFalharAoAtualizarCompanhiaInexistente() {
+        CompanhiaAereaRequest request = new CompanhiaAereaRequest("Azul", "63.141.461/0001-02", null, true, "INATIVA");
 
-        @Test
-        @DisplayName("Deve atualizar companhia existente")
-        void deveAtualizarCompanhiaExistente() {
-                // arrange
-                CompanhiaAereaDTO companhiaAereaAzuldDto = new CompanhiaAereaDTO(
-                                null, "Azul", "63.141.461/0001-02", true, "ATIVA");
-                CompanhiaAerea companhiaSalva = companhiaAereaService.salvarCompanhia(companhiaAereaAzuldDto);
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> companhiaAereaService.atualizarCompanhia(666L, request));
 
-                CompanhiaAereaDTO companhiaAtualizacao = new CompanhiaAereaDTO(
-                                null, "Azul", "63.141.461/0001-02", true, "INATIVA");
-
-                // act
-                CompanhiaAerea result = companhiaAereaService.atualizarCompanhia(companhiaSalva.getId(),
-                                companhiaAtualizacao);
-
-                // assert
-                assertEquals(companhiaSalva.getId(), result.getId());
-                assertEquals("Azul", result.getNome());
-                assertEquals("63.141.461/0001-02", result.getCnpj());
-                assertEquals(CompanhiaAereaStatus.INATIVA, result.getStatus());
-        }
-
-        @Test
-        @DisplayName("Deve falhar ao atualizar companhia inexistente")
-        void deveFalharAoAtualizarCompanhiaInexistente() {
-                // arrange
-                CompanhiaAereaDTO companhiaAereaDTO = new CompanhiaAereaDTO(
-                                null, "Azul", "63.141.461/0001-02", true, "INATIVA");
-
-                // act
-                RuntimeException exception = assertThrows(
-                                RuntimeException.class,
-                                () -> companhiaAereaService.atualizarCompanhia(666L, companhiaAereaDTO));
-
-                // assert
-                assertEquals("Companhia não encontrada", exception.getMessage());
-        }
+        assertEquals("Companhia não encontrada", exception.getMessage());
+    }
 }

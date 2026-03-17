@@ -14,8 +14,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import sistema.aeroporto.dto.PilotoDTO;
+import sistema.aeroporto.dto.request.PilotoRequest;
+import sistema.aeroporto.dto.response.PilotoResponse;
 import sistema.aeroporto.model.Piloto;
+import sistema.aeroporto.model.enums.PilotoStatus;
 import sistema.aeroporto.repository.PilotoRepository;
 
 public class PilotoServiceTeste {
@@ -31,33 +33,38 @@ public class PilotoServiceTeste {
         MockitoAnnotations.openMocks(this);
     }
 
+    private Piloto pilotoEntidade(Long id, String nome, String cpf) {
+        Piloto p = new Piloto();
+        p.setId(id);
+        p.setNome(nome);
+        p.setCpf(cpf);
+        p.setStatus(PilotoStatus.ATIVO);
+        return p;
+    }
+
     @Test
     void deveListarTodosPilotos() {
+        Piloto p = pilotoEntidade(1L, "João", "123");
+        when(pilotoRepository.findAll()).thenReturn(Arrays.asList(p, p));
 
-        when(pilotoRepository.findAll()).thenReturn(Arrays.asList(new Piloto(), new Piloto()));
-
-        List<Piloto> resultado = pilotoService.listarTodosPilotos();
+        List<PilotoResponse> resultado = pilotoService.listarTodosPilotos();
 
         assertEquals(2, resultado.size());
     }
 
     @Test
     void deveBuscarPorCpfExistente() {
-
-        Piloto p = new Piloto();
-        p.setCpf("123");
-
+        Piloto p = pilotoEntidade(1L, "João", "123");
         when(pilotoRepository.findByCpf("123")).thenReturn(Optional.of(p));
 
-        Piloto resultado = pilotoService.buscarPorCpf("123");
+        PilotoResponse resultado = pilotoService.buscarPorCpf("123");
 
         assertNotNull(resultado);
-        assertEquals("123", resultado.getCpf());
+        assertEquals("123", resultado.cpf());
     }
 
     @Test
     void deveLancarExcecaoQuandoCpfNaoExiste() {
-
         when(pilotoRepository.findByCpf("999")).thenReturn(Optional.empty());
 
         RuntimeException exception = assertThrows(
@@ -69,31 +76,21 @@ public class PilotoServiceTeste {
 
     @Test
     void deveSalvarPilotoGerandoMatricula() {
+        PilotoRequest request = new PilotoRequest("Teste", 35, "1", "11144477735", null, "ATPL", null, "ATIVO");
 
-        PilotoDTO dto = new PilotoDTO(
-                "Teste",
-                "35",
-                "1",
-                "11144477735",
-                "ATPL",
-                null,
-                "ATIVO");
-
-        Piloto salvo = new Piloto();
-        salvo.setId(10L);
-        salvo.setMatricula("PIL123");
+        Piloto salvo = pilotoEntidade(10L, "Teste", "11144477735");
+        salvo.setMatricula("PIL" + java.time.LocalDate.now().getYear() + "0010");
 
         when(pilotoRepository.save(any(Piloto.class))).thenReturn(salvo);
 
-        Piloto resultado = pilotoService.salvarPiloto(dto);
+        PilotoResponse resultado = pilotoService.salvarPiloto(request);
 
         assertNotNull(resultado);
-        assertTrue(resultado.getMatricula().startsWith("PIL"));
+        assertTrue(resultado.matricula().startsWith("PIL"));
     }
 
     @Test
     void deveDeletarPiloto() {
-
         doNothing().when(pilotoRepository).deleteById(1L);
 
         pilotoService.deletarPiloto(1L);
@@ -103,44 +100,27 @@ public class PilotoServiceTeste {
 
     @Test
     void deveAtualizarPiloto() {
+        Piloto existente = pilotoEntidade(1L, "Carlos", "11144477735");
 
-        Piloto existente = new Piloto();
-        existente.setId(1L);
-
-        PilotoDTO atualizado = new PilotoDTO(
-                "Carlos",
-                "40",
-                "1",
-                "11144477735",
-                "ATPL",
-                "MAT123",
-                "ATIVO");
+        PilotoRequest request = new PilotoRequest("Carlos", 40, "1", "11144477735", null, "ATPL", "MAT123", "ATIVO");
 
         when(pilotoRepository.findById(1L)).thenReturn(Optional.of(existente));
         when(pilotoRepository.save(any(Piloto.class))).thenReturn(existente);
 
-        Piloto result = pilotoService.atualizarPiloto(1L, atualizado);
+        PilotoResponse result = pilotoService.atualizarPiloto(1L, request);
 
         assertNotNull(result);
     }
 
     @Test
     void deveLancarExcecaoAoAtualizarPilotoInexistente() {
-
-        PilotoDTO atualizado = new PilotoDTO(
-                "Carlos",
-                "40",
-                "1",
-                "11144477735",
-                "ATPL",
-                "MAT123",
-                "ATIVO");
+        PilotoRequest request = new PilotoRequest("Carlos", 40, "1", "11144477735", null, "ATPL", "MAT123", "ATIVO");
 
         when(pilotoRepository.findById(2L)).thenReturn(Optional.empty());
 
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
-                () -> pilotoService.atualizarPiloto(2L, atualizado));
+                () -> pilotoService.atualizarPiloto(2L, request));
 
         assertEquals("Piloto não encontrado", exception.getMessage());
     }

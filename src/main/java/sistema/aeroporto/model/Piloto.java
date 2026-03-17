@@ -3,14 +3,7 @@ package sistema.aeroporto.model;
 import java.time.LocalDate;
 import java.util.List;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import sistema.aeroporto.model.enums.PilotoStatus;
 
 @Entity
@@ -23,8 +16,7 @@ public class Piloto {
     @Column(length = 150)
     private String nome;
 
-    @Column(length = 3)
-    private String idade;
+    private Integer idade;
 
     @Column(length = 1)
     private String genero;
@@ -62,11 +54,11 @@ public class Piloto {
         this.nome = nome;
     }
 
-    public String getIdade() {
+    public Integer getIdade() {
         return idade;
     }
 
-    public void setIdade(String idade) {
+    public void setIdade(Integer idade) {
         this.idade = idade;
     }
 

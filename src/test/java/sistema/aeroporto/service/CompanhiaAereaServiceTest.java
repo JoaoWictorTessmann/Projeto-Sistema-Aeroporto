@@ -4,8 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +14,8 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 
-import sistema.aeroporto.dto.CompanhiaAereaDTO;
+import sistema.aeroporto.dto.request.CompanhiaAereaRequest;
+import sistema.aeroporto.dto.response.CompanhiaAereaResponse;
 import sistema.aeroporto.model.CompanhiaAerea;
 import sistema.aeroporto.model.enums.CompanhiaAereaStatus;
 import sistema.aeroporto.repository.CompanhiaAereaRepository;
@@ -35,9 +36,15 @@ public class CompanhiaAereaServiceTest {
 
     @Test
     void deveListarTodasCompanhias() {
-        when(companhiaRepository.findAll()).thenReturn(List.of(new CompanhiaAerea(), new CompanhiaAerea()));
+        CompanhiaAerea c = new CompanhiaAerea();
+        c.setId(1L);
+        c.setNome("Azul");
+        c.setCnpj("12345");
+        c.setStatus(CompanhiaAereaStatus.ATIVA);
 
-        List<CompanhiaAerea> lista = companhiaService.listarTodasCompanhias();
+        when(companhiaRepository.findAll()).thenReturn(List.of(c, c));
+
+        List<CompanhiaAereaResponse> lista = companhiaService.listarTodasCompanhias();
 
         assertEquals(2, lista.size());
     }
@@ -45,22 +52,23 @@ public class CompanhiaAereaServiceTest {
     @Test
     void deveBuscarCompanhiaPorNome() {
         CompanhiaAerea c = new CompanhiaAerea();
+        c.setId(1L);
         c.setNome("Azul");
+        c.setStatus(CompanhiaAereaStatus.ATIVA);
 
         when(companhiaRepository.findByNome("Azul")).thenReturn(Optional.of(c));
 
-        CompanhiaAerea result = companhiaService.buscarPorNome("Azul");
+        CompanhiaAereaResponse result = companhiaService.buscarPorNome("Azul");
 
-        assertEquals("Azul", result.getNome());
+        assertEquals("Azul", result.nome());
     }
 
     @Test
     void deveFalharAoBuscarCompanhiaPorNomeInexistente() {
         when(companhiaRepository.findByNome("X")).thenReturn(Optional.empty());
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-            companhiaService.buscarPorNome("X");
-        });
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> companhiaService.buscarPorNome("X"));
 
         assertEquals("Companhia não encontrada", ex.getMessage());
     }
@@ -68,76 +76,61 @@ public class CompanhiaAereaServiceTest {
     @Test
     void deveBuscarCompanhiaPorCnpj() {
         CompanhiaAerea c = new CompanhiaAerea();
+        c.setId(1L);
         c.setCnpj("12345678000199");
+        c.setStatus(CompanhiaAereaStatus.ATIVA);
 
         when(companhiaRepository.findByCnpj("12345678000199")).thenReturn(Optional.of(c));
 
-        CompanhiaAerea result = companhiaService.buscarPorCnpj("12345678000199");
+        CompanhiaAereaResponse result = companhiaService.buscarPorCnpj("12345678000199");
 
-        assertEquals("12345678000199", result.getCnpj());
+        assertEquals("12345678000199", result.cnpj());
     }
 
     @Test
     void deveFalharAoBuscarCompanhiaPorCnpjInexistente() {
         when(companhiaRepository.findByCnpj("000")).thenReturn(Optional.empty());
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-            companhiaService.buscarPorCnpj("000");
-        });
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> companhiaService.buscarPorCnpj("000"));
 
         assertEquals("Companhia não encontrada", ex.getMessage());
     }
 
     @Test
     void deveSalvarCompanhiaComCnpjValido() {
-
         String cnpj = "28.818.940/0001-01";
-        CompanhiaAereaDTO companhiaAereaDTO = new CompanhiaAereaDTO(
-                null,
-                "Azul",
-                cnpj,
-                true,
-                "ATIVA");
+        CompanhiaAereaRequest request = new CompanhiaAereaRequest("Azul", cnpj, null, true, "ATIVA");
 
         CompanhiaAerea entidade = new CompanhiaAerea();
+        entidade.setId(1L);
         entidade.setNome("Azul");
         entidade.setCnpj(cnpj);
         entidade.setSeguroAeronave(true);
         entidade.setStatus(CompanhiaAereaStatus.ATIVA);
 
         try (MockedStatic<CnpjUtils> mock = mockStatic(CnpjUtils.class)) {
+            mock.when(() -> CnpjUtils.validarCnpj(cnpj)).thenReturn(true);
+            when(companhiaRepository.existsByCnpj(cnpj)).thenReturn(false);
+            when(companhiaRepository.existsByNome("Azul")).thenReturn(false);
+            when(companhiaRepository.save(any(CompanhiaAerea.class))).thenReturn(entidade);
 
-            mock.when(() -> CnpjUtils.validarCnpj(cnpj))
-                    .thenReturn(true);
+            CompanhiaAereaResponse result = companhiaService.salvarCompanhia(request);
 
-            when(companhiaRepository.existsByCnpj(cnpj))
-                    .thenReturn(false);
-
-            when(companhiaRepository.save(any(CompanhiaAerea.class)))
-                    .thenReturn(entidade);
-
-            CompanhiaAerea result = companhiaService.salvarCompanhia(companhiaAereaDTO);
-
-            assertEquals(cnpj, result.getCnpj());
+            assertEquals(cnpj, result.cnpj());
         }
     }
 
     @Test
     void deveFalharAoSalvarCompanhiaComCnpjInvalido() {
         String cnpj = "28.818.940/0001-01";
-        CompanhiaAereaDTO companhiaAereaDTO = new CompanhiaAereaDTO(
-                null,
-                "Azul",
-                cnpj,
-                true,
-                "ATIVA");
+        CompanhiaAereaRequest request = new CompanhiaAereaRequest("Azul", cnpj, null, true, "ATIVA");
 
         try (MockedStatic<CnpjUtils> mock = mockStatic(CnpjUtils.class)) {
             mock.when(() -> CnpjUtils.validarCnpj(cnpj)).thenReturn(false);
 
-            RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-                companhiaService.salvarCompanhia(companhiaAereaDTO);
-            });
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> companhiaService.salvarCompanhia(request));
 
             assertEquals("CNPJ inválido", ex.getMessage());
         }
@@ -146,20 +139,14 @@ public class CompanhiaAereaServiceTest {
     @Test
     void deveFalharAoSalvarCompanhiaComCnpjDuplicado() {
         String cnpj = "28.818.940/0001-01";
-        CompanhiaAereaDTO companhiaAereaDTO = new CompanhiaAereaDTO(
-                null,
-                "Azul",
-                cnpj,
-                true,
-                "ATIVA");
+        CompanhiaAereaRequest request = new CompanhiaAereaRequest("Azul", cnpj, null, true, "ATIVA");
 
         try (MockedStatic<CnpjUtils> mock = mockStatic(CnpjUtils.class)) {
             mock.when(() -> CnpjUtils.validarCnpj(cnpj)).thenReturn(true);
             when(companhiaRepository.existsByCnpj(cnpj)).thenReturn(true);
 
-            RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-                companhiaService.salvarCompanhia(companhiaAereaDTO);
-            });
+            RuntimeException ex = assertThrows(RuntimeException.class,
+                    () -> companhiaService.salvarCompanhia(request));
 
             assertEquals("CNPJ já cadastrado", ex.getMessage());
         }
@@ -178,55 +165,39 @@ public class CompanhiaAereaServiceTest {
     void deveFalharAoDeletarCompanhiaInexistente() {
         when(companhiaRepository.existsById(1L)).thenReturn(false);
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-            companhiaService.deletarCompanhia(1L);
-        });
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> companhiaService.deletarCompanhia(1L));
 
         assertEquals("Companhia não encontrada", ex.getMessage());
     }
 
     @Test
     void deveAtualizarCompanhia() {
-
         CompanhiaAerea existente = new CompanhiaAerea();
         existente.setId(1L);
         existente.setNome("Azul");
         existente.setCnpj("40510225000102");
         existente.setSeguroAeronave(true);
-        existente.setStatus(CompanhiaAereaStatus.ATIVA);
+        existente.setStatus(CompanhiaAereaStatus.INATIVA); // save devolve já atualizado
 
-        CompanhiaAereaDTO dto = new CompanhiaAereaDTO(
-                null,
-                "Azul",
-                "40510225000102",
-                true,
-                "INATIVA");
+        CompanhiaAereaRequest request = new CompanhiaAereaRequest("Azul", "40510225000102", null, true, "INATIVA");
 
-        when(companhiaRepository.findById(1L))
-                .thenReturn(Optional.of(existente));
+        when(companhiaRepository.findById(1L)).thenReturn(Optional.of(existente));
+        when(companhiaRepository.save(any(CompanhiaAerea.class))).thenReturn(existente);
 
-        when(companhiaRepository.save(any(CompanhiaAerea.class)))
-                .thenReturn(existente);
+        CompanhiaAereaResponse result = companhiaService.atualizarCompanhia(1L, request);
 
-        CompanhiaAerea result = companhiaService.atualizarCompanhia(1L, dto);
-
-        assertEquals(CompanhiaAereaStatus.INATIVA, result.getStatus());
+        assertEquals(CompanhiaAereaStatus.INATIVA.name(), result.status());
     }
 
     @Test
     void deveFalharAoAtualizarCompanhiaInexistente() {
+        CompanhiaAereaRequest request = new CompanhiaAereaRequest("Azul", "40510225000102", null, true, "ATIVA");
 
-        CompanhiaAereaDTO dto = new CompanhiaAereaDTO(
-                null,
-                "Azul",
-                "40510225000102",
-                true,
-                "ATIVA");
         when(companhiaRepository.findById(1L)).thenReturn(Optional.empty());
 
-        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
-            companhiaService.atualizarCompanhia(1L, dto);
-        });
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> companhiaService.atualizarCompanhia(1L, request));
 
         assertEquals("Companhia não encontrada", ex.getMessage());
     }

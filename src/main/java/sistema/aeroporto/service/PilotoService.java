@@ -7,7 +7,8 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import sistema.aeroporto.dto.PilotoDTO;
+import sistema.aeroporto.dto.request.PilotoRequest;
+import sistema.aeroporto.dto.response.PilotoResponse;
 import sistema.aeroporto.exception.CpfInvalidoException;
 import sistema.aeroporto.exception.CpfJaCadastradoException;
 import sistema.aeroporto.exception.CpfObrigatorioException;
@@ -24,100 +25,100 @@ public class PilotoService {
     @Autowired
     private PilotoRepository pilotoRepository;
 
-    // Buscar piloto por ID
-    public Piloto buscarPorId(Long id) {
-        return pilotoRepository.findById(id)
-                .orElseThrow(() -> new NotFoundPilotoException());
+    // Converte entity → Response
+    private PilotoResponse toResponse(Piloto p) {
+        return new PilotoResponse(
+            p.getId(),
+            p.getNome(),
+            p.getIdade(),
+            p.getGenero(),
+            p.getCpf(),
+            p.getDataRenovacao(),
+            p.getMatricula(),
+            p.getHabilitacao(),
+            p.getStatus().name()
+        );
     }
 
-    // Método para listar todos os pilotos
-    public List<Piloto> listarTodosPilotos() {
-        return pilotoRepository.findAll();
+    public PilotoResponse buscarPorId(Long id) {
+        return toResponse(pilotoRepository.findById(id)
+                .orElseThrow(NotFoundPilotoException::new));
     }
 
-    // Método para buscar um piloto por CPF
-    public Piloto buscarPorCpf(String cpf) {
+    public List<PilotoResponse> listarTodosPilotos() {
+        return pilotoRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    public PilotoResponse buscarPorCpf(String cpf) {
+        return toResponse(pilotoRepository.findByCpf(cpf)
+                .orElseThrow(NotFoundPilotoException::new));
+    }
+
+    public PilotoResponse buscarPorMatricula(String matricula) {
+        return toResponse(pilotoRepository.findByMatricula(matricula)
+                .orElseThrow(NotFoundPilotoException::new));
+    }
+
+    public Piloto buscarEntidadePorCpf(String cpf) {
         return pilotoRepository.findByCpf(cpf)
-                .orElseThrow(() -> new NotFoundPilotoException());
+                .orElseThrow(NotFoundPilotoException::new);
     }
 
-    // Método para buscar um piloto por matrícula
-    public Piloto buscarPorMatricula(String matricula) {
-        return pilotoRepository.findByMatricula(matricula)
-                .orElseThrow(() -> new NotFoundPilotoException());
-    }
+    public PilotoResponse salvarPiloto(PilotoRequest request) {
+        if (request.nome() == null || request.nome().isBlank()) {
+            throw new NomeObrigatorioException();
+        }
+        if (request.cpf() == null || request.cpf().isBlank()) {
+            throw new CpfObrigatorioException();
+        }
 
-    // Método para salvar um novo piloto
-    public Piloto salvarPiloto(PilotoDTO pilotoDTO) {
+        String cpfLimpo = CpfUtils.limpar(request.cpf());
+
+        if (!CpfUtils.validarCpf(cpfLimpo)) {
+            throw new CpfInvalidoException();
+        }
+        if (pilotoRepository.existsByCpf(cpfLimpo)) {
+            throw new CpfJaCadastradoException();
+        }
 
         Piloto piloto = new Piloto();
-        piloto.setNome(pilotoDTO.nome());
-        piloto.setIdade(pilotoDTO.idade());
-        piloto.setGenero(pilotoDTO.genero());
-        piloto.setCpf(pilotoDTO.cpf());
+        piloto.setNome(request.nome());
+        piloto.setIdade(request.idade());
+        piloto.setGenero(request.genero());
+        piloto.setCpf(cpfLimpo);
         piloto.setDataRenovacao(LocalDate.now());
+        piloto.setHabilitacao(request.habilitacao());
         piloto.setMatricula(UUID.randomUUID().toString());
-        piloto.setHabilitacao(pilotoDTO.habilitacao());
 
-        if (pilotoDTO.status() != null && !pilotoDTO.status().isBlank()) {
-            piloto.setStatus(PilotoStatus.valueOf(pilotoDTO.status().toUpperCase()));
+        if (request.status() != null && !request.status().isBlank()) {
+            piloto.setStatus(PilotoStatus.valueOf(request.status().toUpperCase()));
         } else {
             piloto.setStatus(PilotoStatus.ATIVO);
         }
 
-        // --- Validações básicas ---
-        if (piloto.getNome() == null || piloto.getNome().isBlank()) {
-            throw new NomeObrigatorioException();
-        }
-
-        if (piloto.getCpf() == null || piloto.getCpf().isBlank()) {
-            throw new CpfObrigatorioException();
-        }
-
-        // Limpa o CPF antes de validar (remove pontos e traços)
-        piloto.setCpf(CpfUtils.limpar(piloto.getCpf()));
-
-        if (!CpfUtils.validarCpf(piloto.getCpf())) {
-            throw new CpfInvalidoException();
-        }
-
-        // Verificar se CPF já está cadastrado
-        if (pilotoRepository.existsByCpf(piloto.getCpf())) {
-            throw new CpfJaCadastradoException();
-        }
-
-        // --- Geração de matrícula (caso não exista) ---
-        if (piloto.getMatricula() == null || piloto.getMatricula().isBlank()) {
-            piloto.setMatricula(UUID.randomUUID().toString());
-        }
-
-        // Primeiro salvamos para gerar o ID
         Piloto saved = pilotoRepository.save(piloto);
 
-        // Agora geramos a matrícula final
-        String matriculaGerada = "PIL" + LocalDate.now().getYear() + String.format("%04d", saved.getId());
-        saved.setMatricula(matriculaGerada);
+        saved.setMatricula("PIL" + LocalDate.now().getYear() + String.format("%04d", saved.getId()));
 
-        // Atualizamos a matrícula no banco
-        return pilotoRepository.save(saved);
+        return toResponse(pilotoRepository.save(saved));
     }
 
-    // Método para deletar um piloto por ID
     public void deletarPiloto(Long id) {
         pilotoRepository.deleteById(id);
     }
 
-    // Método para atualizar um piloto existente
-    public Piloto atualizarPiloto(Long id, PilotoDTO pilotoAtualizado) {
+    public PilotoResponse atualizarPiloto(Long id, PilotoRequest request) {
+        Piloto piloto = pilotoRepository.findById(id)
+                .orElseThrow(NotFoundPilotoException::new);
 
-        Piloto pilotoExistente = pilotoRepository.findById(id)
-                .orElseThrow(() -> new NotFoundPilotoException());
+        piloto.setNome(request.nome());
+        piloto.setIdade(request.idade());
+        piloto.setGenero(request.genero());
+        piloto.setStatus(PilotoStatus.valueOf(request.status().toUpperCase()));
 
-        pilotoExistente.setNome(pilotoAtualizado.nome());
-        pilotoExistente.setStatus(PilotoStatus.valueOf(pilotoAtualizado.status()));
-        pilotoExistente.setGenero(pilotoAtualizado.genero());
-        pilotoExistente.setIdade(pilotoAtualizado.idade());
-
-        return pilotoRepository.save(pilotoExistente);
+        return toResponse(pilotoRepository.save(piloto));
     }
 }

@@ -6,23 +6,11 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import sistema.aeroporto.dto.VooDTO;
-import sistema.aeroporto.exception.CodigoVooExistenteException;
-import sistema.aeroporto.exception.CodigoVooObrigatorioException;
-import sistema.aeroporto.exception.CompanhiaNaoAtivaException;
-import sistema.aeroporto.exception.HorarioPartidaObrigatorioException;
-import sistema.aeroporto.exception.HorarioPartidaPassadoException;
-import sistema.aeroporto.exception.MotivoCancelamentoObrigatorioException;
-import sistema.aeroporto.exception.NotFoundCompanhiaAereaException;
-import sistema.aeroporto.exception.NotFoundPilotoException;
-import sistema.aeroporto.exception.NotFoundVooException;
-import sistema.aeroporto.exception.OrigemDestinoIguaisException;
-import sistema.aeroporto.exception.OrigemDestinoObrigatorioException;
-import sistema.aeroporto.exception.PilotoInativoException;
-import sistema.aeroporto.exception.PilotoObrigatorioException;
-import sistema.aeroporto.exception.PilotoOutroVooException;
-import sistema.aeroporto.exception.SemPilotoException;
-import sistema.aeroporto.exception.SomenteAgendadoException;
+import sistema.aeroporto.dto.request.VooRequest;
+import sistema.aeroporto.dto.response.CompanhiaAereaResponse;
+import sistema.aeroporto.dto.response.PilotoResponse;
+import sistema.aeroporto.dto.response.VooResponse;
+import sistema.aeroporto.exception.*;
 import sistema.aeroporto.model.CompanhiaAerea;
 import sistema.aeroporto.model.Piloto;
 import sistema.aeroporto.model.Voo;
@@ -45,89 +33,111 @@ public class VooService {
     @Autowired
     private CompanhiaAereaRepository companhiaAereaRepository;
 
-    // Criar voo com todas as validações
-    public Voo criarVoo(VooDTO vooDTO) {
+    private VooResponse toResponse(Voo v) {
+        PilotoResponse pilotoResponse = v.getPiloto() == null ? null : new PilotoResponse(
+            v.getPiloto().getId(),
+            v.getPiloto().getNome(),
+            v.getPiloto().getIdade(),
+            v.getPiloto().getGenero(),
+            v.getPiloto().getCpf(),
+            v.getPiloto().getDataRenovacao(),
+            v.getPiloto().getMatricula(),
+            v.getPiloto().getHabilitacao(),
+            v.getPiloto().getStatus().name()
+        );
 
-        if (vooDTO.origem() == null || vooDTO.destino() == null) {
+        CompanhiaAereaResponse companhiaResponse = v.getCompanhia() == null ? null : new CompanhiaAereaResponse(
+            v.getCompanhia().getId(),
+            v.getCompanhia().getNome(),
+            v.getCompanhia().getCnpj(),
+            v.getCompanhia().getDataFundacao(),
+            v.getCompanhia().getSeguroAeronave(),
+            v.getCompanhia().getStatus().name()
+        );
+
+        return new VooResponse(
+            v.getId(),
+            pilotoResponse,
+            companhiaResponse,
+            v.getCodigo(),
+            v.getOrigem(),
+            v.getDestino(),
+            v.getHorarioPartidaPrevisto(),
+            v.getHorarioChegadaPrevisto(),
+            v.getHorarioPartidaReal(),
+            v.getHorarioChegadaReal(),
+            v.getMotivoCancelamento(),
+            v.getStatus().name()
+        );
+    }
+
+    public VooResponse criarVoo(VooRequest request) {
+        if (request.origem() == null || request.destino() == null) {
             throw new OrigemDestinoObrigatorioException();
         }
-
-        if (vooDTO.origem().equalsIgnoreCase(vooDTO.destino())) {
+        if (request.origem().equalsIgnoreCase(request.destino())) {
             throw new OrigemDestinoIguaisException();
         }
-
-        if (vooDTO.horarioPartidaPrevisto() == null) {
+        if (request.horarioPartidaPrevisto() == null) {
             throw new HorarioPartidaObrigatorioException();
         }
-
-        LocalDateTime horarioPartidaPrevisto = LocalDateTime.parse(vooDTO.horarioPartidaPrevisto());
-
-        if (horarioPartidaPrevisto.isBefore(LocalDateTime.now())) {
+        if (request.horarioPartidaPrevisto().isBefore(LocalDateTime.now())) {
             throw new HorarioPartidaPassadoException();
         }
-
-        if (vooDTO.piloto() == null || vooDTO.piloto().cpf() == null) {
+        if (request.pilotoId() == null) {
             throw new PilotoObrigatorioException();
         }
+        if (request.codigo() == null || request.codigo().isBlank()) {
+            throw new CodigoVooObrigatorioException();
+        }
+        if (vooRepository.existsByCodigo(request.codigo())) {
+            throw new CodigoVooExistenteException();
+        }
 
-        Piloto piloto = pilotoRepository.findByCpf(vooDTO.piloto().cpf())
-                .orElseThrow(() -> new NotFoundPilotoException());
+        Piloto piloto = pilotoRepository.findById(request.pilotoId())
+                .orElseThrow(NotFoundPilotoException::new);
 
         boolean conflito = vooRepository.findByPiloto_Id(piloto.getId()).stream()
-                .anyMatch(v -> v.getHorarioPartidaPrevisto() != null &&
-                        v.getHorarioPartidaPrevisto().equals(horarioPartidaPrevisto));
+                .anyMatch(v -> request.horarioPartidaPrevisto().equals(v.getHorarioPartidaPrevisto()));
 
         if (conflito) {
             throw new PilotoOutroVooException();
         }
 
-        if (vooDTO.companhia() == null || vooDTO.companhia().cnpj() == null) {
-            throw new NotFoundCompanhiaAereaException();
-        }
-
-        CompanhiaAerea companhia = companhiaAereaRepository.findByCnpj(vooDTO.companhia().cnpj())
-                .orElseThrow(() -> new NotFoundCompanhiaAereaException());
+        CompanhiaAerea companhia = companhiaAereaRepository.findById(request.companhiaId())
+                .orElseThrow(NotFoundCompanhiaAereaException::new);
 
         if (companhia.getStatus() != CompanhiaAereaStatus.ATIVA) {
             throw new CompanhiaNaoAtivaException();
         }
 
-        if (vooDTO.codigo() == null || vooDTO.codigo().isBlank()) {
-            throw new CodigoVooObrigatorioException();
-        }
-
-        if (vooRepository.existsByCodigo(vooDTO.codigo())) {
-            throw new CodigoVooExistenteException();
-        }
-
         Voo voo = new Voo();
         voo.setPiloto(piloto);
         voo.setCompanhia(companhia);
-        voo.setCodigo(vooDTO.codigo());
-        voo.setOrigem(vooDTO.origem());
-        voo.setDestino(vooDTO.destino());
-        voo.setHorarioPartidaPrevisto(horarioPartidaPrevisto);
-        voo.setHorarioChegadaPrevisto(horarioPartidaPrevisto.plusHours(4));
+        voo.setCodigo(request.codigo());
+        voo.setOrigem(request.origem().toUpperCase());
+        voo.setDestino(request.destino().toUpperCase());
+        voo.setHorarioPartidaPrevisto(request.horarioPartidaPrevisto());
+        voo.setHorarioChegadaPrevisto(request.horarioChegadaPrevisto() != null
+                ? request.horarioChegadaPrevisto()
+                : request.horarioPartidaPrevisto().plusHours(4));
         voo.setStatus(VooStatus.AGENDADO);
 
-        return vooRepository.save(voo);
+        return toResponse(vooRepository.save(voo));
     }
 
-    public Voo iniciarVoo(Long vooId) {
-
+    public VooResponse iniciarVoo(Long vooId) {
         Voo voo = vooRepository.findById(vooId)
-                .orElseThrow(() -> new NotFoundVooException());
+                .orElseThrow(NotFoundVooException::new);
 
         if (voo.getStatus() != VooStatus.AGENDADO) {
             throw new SomenteAgendadoException();
         }
 
         Piloto piloto = voo.getPiloto();
-
         if (piloto == null) {
             throw new SemPilotoException();
         }
-
         if (piloto.getStatus() == PilotoStatus.INATIVO) {
             throw new PilotoInativoException();
         }
@@ -135,65 +145,61 @@ public class VooService {
         voo.setStatus(VooStatus.EM_VOO);
         voo.setHorarioPartidaReal(LocalDateTime.now());
 
-        return vooRepository.save(voo);
+        return toResponse(vooRepository.save(voo));
     }
 
-    // Cancelar voo com motivo obrigatório
-    public Voo cancelarVoo(Long vooId, VooDTO motivo) {
-        if (motivo == null || motivo.motivoCancelamento() == null || motivo.motivoCancelamento().trim().isEmpty()) {
+    public VooResponse cancelarVoo(Long vooId, String motivoCancelamento) {
+        if (motivoCancelamento == null || motivoCancelamento.isBlank()) {
             throw new MotivoCancelamentoObrigatorioException();
         }
 
         Voo voo = vooRepository.findById(vooId)
-                .orElseThrow(() -> new NotFoundVooException());
+                .orElseThrow(NotFoundVooException::new);
 
         voo.setStatus(VooStatus.CANCELADO);
-        voo.setMotivoCancelamento(motivo.motivoCancelamento());
-        return vooRepository.save(voo);
+        voo.setMotivoCancelamento(motivoCancelamento);
+
+        return toResponse(vooRepository.save(voo));
     }
 
-    // Listar todos os voos
-    public List<Voo> listarTodos() {
-        return vooRepository.findAll();
+    public List<VooResponse> listarTodos() {
+        return vooRepository.findAll().stream().map(this::toResponse).toList();
     }
 
-    // Buscar por id
-    public Voo buscarPorId(Long id) {
-        return vooRepository.findById(id)
-                .orElseThrow(() -> new NotFoundVooException());
+    public VooResponse buscarPorId(Long id) {
+        return toResponse(vooRepository.findById(id)
+                .orElseThrow(NotFoundVooException::new));
     }
 
-    // Buscar voos por status
-    public List<Voo> buscarPorStatus(VooDTO status) {
-        return vooRepository.findByStatus(VooStatus.valueOf(status.status()));
+    public List<VooResponse> buscarPorStatus(String status) {
+        return vooRepository.findByStatus(VooStatus.valueOf(status.toUpperCase()))
+                .stream().map(this::toResponse).toList();
+    }
+//interessante como esse metodo funciona!!!
+    public List<VooResponse> buscarPorPiloto(Long pilotoId) {
+        return vooRepository.findByPiloto_Id(pilotoId)
+                .stream().map(this::toResponse).toList();
     }
 
-    // Buscar voos por piloto
-    public List<Voo> buscarPorPiloto(Long pilotoId) {
-        return vooRepository.findByPiloto_Id(pilotoId);
+    public List<VooResponse> buscarPorCompanhia(Long companhiaId) {
+        return vooRepository.findByCompanhia_Id(companhiaId)
+                .stream().map(this::toResponse).toList();
     }
 
-    // Buscar voos por companhia
-    public List<Voo> buscarPorCompanhia(Long companhiaId) {
-        return vooRepository.findByCompanhia_Id(companhiaId);
-    }
+    public VooResponse atualizarVoo(Long vooId, VooRequest request) {
+        Voo voo = vooRepository.findById(vooId)
+                .orElseThrow(NotFoundVooException::new);
 
-    // Atualizar informações do voo
-    public Voo atualizarVoo(Long vooId, VooDTO vooAtualizado) {
-        Voo vooExistente = vooRepository.findById(vooId)
-                .orElseThrow(() -> new NotFoundVooException());
+        if (request.horarioPartidaReal() != null) {
+            voo.setHorarioPartidaReal(request.horarioPartidaReal());
+        }
+        if (request.horarioChegadaReal() != null) {
+            voo.setHorarioChegadaReal(request.horarioChegadaReal());
+        }
+        if (request.status() != null && !request.status().isBlank()) {
+            voo.setStatus(VooStatus.valueOf(request.status().toUpperCase()));
+        }
 
-        // Atualiza campos permitidos
-        LocalDateTime partidaReal =
-            LocalDateTime.parse(vooAtualizado.horarioPartidaReal());
-
-        LocalDateTime chegadaReal =
-            LocalDateTime.parse(vooAtualizado.horarioChegadaReal());
-
-            vooExistente.setHorarioPartidaReal(partidaReal);
-            vooExistente.setHorarioChegadaReal(chegadaReal);
-            vooExistente.setStatus(VooStatus.valueOf(vooAtualizado.status().toUpperCase()));
-
-        return vooRepository.save(vooExistente);
+        return toResponse(vooRepository.save(voo));
     }
 }

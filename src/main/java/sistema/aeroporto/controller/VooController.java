@@ -6,8 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import sistema.aeroporto.dto.VooDTO;
-import sistema.aeroporto.model.Voo;
+import jakarta.validation.Valid;
+import sistema.aeroporto.dto.request.VooRequest;
+import sistema.aeroporto.dto.response.VooResponse;
 import sistema.aeroporto.service.VooService;
 
 @RestController
@@ -17,62 +18,55 @@ public class VooController {
     @Autowired
     private VooService vooService;
 
-    // Criar voo
     @PostMapping
-    public ResponseEntity<Voo> criarVoo(@RequestBody VooDTO voo) {
-        Voo novoVoo = vooService.criarVoo(voo);
-        return ResponseEntity.ok(novoVoo);
+    public ResponseEntity<VooResponse> criarVoo(@RequestBody @Valid VooRequest request) {
+        return ResponseEntity.status(201).body(vooService.criarVoo(request));
     }
 
-    // Listar todos os voos
     @GetMapping
-    public ResponseEntity<List<Voo>> listarTodos() {
+    public ResponseEntity<List<VooResponse>> listarTodos() {
         return ResponseEntity.ok(vooService.listarTodos());
     }
 
-    //buscar voo por ID
     @GetMapping("/{id}")
-    public ResponseEntity<Voo> buscarPorId(@PathVariable Long id) {
-        Voo voo = vooService.buscarPorId(id);
-        return ResponseEntity.ok(voo);
+    public ResponseEntity<VooResponse> buscarPorId(@PathVariable Long id) {
+        return ResponseEntity.ok(vooService.buscarPorId(id));
     }
 
-    // Buscar voos por status
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<Voo>> buscarPorStatus(@PathVariable VooDTO status) {
+    public ResponseEntity<List<VooResponse>> buscarPorStatus(@PathVariable String status) {
+        // ← PathVariable String, não mais VooDTO
         return ResponseEntity.ok(vooService.buscarPorStatus(status));
     }
 
-    // Buscar voos por piloto
     @GetMapping("/piloto/{pilotoId}")
-    public ResponseEntity<List<Voo>> buscarPorPiloto(@PathVariable Long pilotoId) {
+    public ResponseEntity<List<VooResponse>> buscarPorPiloto(@PathVariable Long pilotoId) {
         return ResponseEntity.ok(vooService.buscarPorPiloto(pilotoId));
     }
 
-    // Buscar voos por companhia
     @GetMapping("/companhia/{companhiaId}")
-    public ResponseEntity<List<Voo>> buscarPorCompanhia(@PathVariable Long companhiaId) {
+    public ResponseEntity<List<VooResponse>> buscarPorCompanhia(@PathVariable Long companhiaId) {
         return ResponseEntity.ok(vooService.buscarPorCompanhia(companhiaId));
     }
 
-    // Iniciar voo
-    @PutMapping("/iniciar/{vooId}")
-    public ResponseEntity<Voo> iniciarVoo(@PathVariable Long vooId) {
-        Voo voo = vooService.iniciarVoo(vooId);
-        return ResponseEntity.ok(voo);
+    @PostMapping("/iniciar/{vooId}")
+    public ResponseEntity<VooResponse> iniciarVoo(@PathVariable Long vooId) {
+        return ResponseEntity.ok(vooService.iniciarVoo(vooId));
     }
 
-    // Cancelar voo com motivo
-    @PutMapping("/cancelar/{vooId}")
-    public ResponseEntity<Voo> cancelarVoo(@PathVariable Long vooId, @RequestParam VooDTO motivo) {
-        Voo voo = vooService.cancelarVoo(vooId, motivo);
-        return ResponseEntity.ok(voo);
+    @PatchMapping("/cancelar/{vooId}")
+    // ← trocado de @DeleteMapping para @PATCH (cancelar é atualização, não deleção)
+    public ResponseEntity<VooResponse> cancelarVoo(
+            @PathVariable Long vooId,
+            @RequestParam String motivoCancelamento) {
+        // ← @RequestParam String direto, não mais VooDTO
+        return ResponseEntity.ok(vooService.cancelarVoo(vooId, motivoCancelamento));
     }
 
-    // Atualizar voo
-    @PutMapping("/atualizar/{vooId}")
-    public ResponseEntity<Voo> atualizarVoo(@PathVariable Long vooId, @RequestBody VooDTO vooAtualizado) {
-        Voo voo = vooService.atualizarVoo(vooId, vooAtualizado);
-        return ResponseEntity.ok(voo);
+    @PutMapping("/{vooId}")
+    public ResponseEntity<VooResponse> atualizarVoo(
+            @PathVariable Long vooId,
+            @RequestBody @Valid VooRequest request) {
+        return ResponseEntity.ok(vooService.atualizarVoo(vooId, request));
     }
 }

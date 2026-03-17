@@ -6,7 +6,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import sistema.aeroporto.dto.CompanhiaAereaDTO;
+import sistema.aeroporto.dto.request.CompanhiaAereaRequest;
+import sistema.aeroporto.dto.response.CompanhiaAereaResponse;
 import sistema.aeroporto.exception.CnpjInvalidoException;
 import sistema.aeroporto.exception.CnpjJaCadastradoException;
 import sistema.aeroporto.exception.NomeJaCadastradoException;
@@ -22,58 +23,74 @@ public class CompanhiaAereaService {
     @Autowired
     private CompanhiaAereaRepository companhiaAereaRepository;
 
-    // Buscar companhia por ID
-    public CompanhiaAerea buscarPorId(Long id) {
-        return companhiaAereaRepository.findById(id)
-                .orElseThrow(() -> new NotFoundCompanhiaAereaException());
+    // Converte entity → Response
+    private CompanhiaAereaResponse toResponse(CompanhiaAerea c) {
+        return new CompanhiaAereaResponse(
+            c.getId(),
+            c.getNome(),
+            c.getCnpj(),
+            c.getDataFundacao(),
+            c.getSeguroAeronave(),
+            c.getStatus().name()
+        );
     }
 
-    // Listar todas as companhias aéreas
-    public List<CompanhiaAerea> listarTodasCompanhias() {
-        return companhiaAereaRepository.findAll();
+    public CompanhiaAereaResponse buscarPorId(Long id) {
+        CompanhiaAerea c = companhiaAereaRepository.findById(id)
+                .orElseThrow(NotFoundCompanhiaAereaException::new);
+        return toResponse(c);
     }
 
-    // Buscar companhia por nome
-    public CompanhiaAerea buscarPorNome(String nome) {
-        return companhiaAereaRepository.findByNome(nome)
-                .orElseThrow(() -> new NotFoundCompanhiaAereaException());
+    public List<CompanhiaAereaResponse> listarTodasCompanhias() {
+        return companhiaAereaRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
-    // Buscar companhia por CNPJ
-    public CompanhiaAerea buscarPorCnpj(String cnpj) {
+    public CompanhiaAereaResponse buscarPorNome(String nome) {
+        CompanhiaAerea c = companhiaAereaRepository.findByNome(nome)
+                .orElseThrow(NotFoundCompanhiaAereaException::new);
+        return toResponse(c);
+    }
+
+    public CompanhiaAereaResponse buscarPorCnpj(String cnpj) {
+        CompanhiaAerea c = companhiaAereaRepository.findByCnpj(cnpj)
+                .orElseThrow(NotFoundCompanhiaAereaException::new);
+        return toResponse(c);
+    }
+
+    public CompanhiaAerea buscarEntidadePorCnpj(String cnpj) {
         return companhiaAereaRepository.findByCnpj(cnpj)
-                .orElseThrow(() -> new NotFoundCompanhiaAereaException());
+                .orElseThrow(NotFoundCompanhiaAereaException::new);
     }
 
-    // Salvar nova companhia aérea
-    public CompanhiaAerea salvarCompanhia(CompanhiaAereaDTO companhiaDTO) {
-        if (!CnpjUtils.validarCnpj(companhiaDTO.cnpj())) {
+    public CompanhiaAereaResponse salvarCompanhia(CompanhiaAereaRequest request) {
+        if (!CnpjUtils.validarCnpj(request.cnpj())) {
             throw new CnpjInvalidoException();
         }
-        if (companhiaAereaRepository.existsByCnpj(companhiaDTO.cnpj())) {
+        if (companhiaAereaRepository.existsByCnpj(request.cnpj())) {
             throw new CnpjJaCadastradoException();
         }
-        if (companhiaAereaRepository.existsByNome(companhiaDTO.nome())) {
+        if (companhiaAereaRepository.existsByNome(request.nome())) {
             throw new NomeJaCadastradoException();
         }
 
         CompanhiaAerea companhia = new CompanhiaAerea();
-        companhia.setNome(companhiaDTO.nome());
-        companhia.setCnpj(companhiaDTO.cnpj());
-        companhia.setDataFundacao(LocalDate.now());
-        companhia.setSeguroAeronave(companhiaDTO.seguroAeronave());
+        companhia.setNome(request.nome());
+        companhia.setCnpj(request.cnpj());
+        companhia.setDataFundacao(request.dataFundacao() != null ? request.dataFundacao() : LocalDate.now());
+        companhia.setSeguroAeronave(request.seguroAeronave());
 
-        
-        if (companhiaDTO.status() != null && !companhiaDTO.status().isBlank()) {
-            companhia.setStatus(CompanhiaAereaStatus.valueOf(companhiaDTO.status().toUpperCase()));
+        if (request.status() != null && !request.status().isBlank()) {
+            companhia.setStatus(CompanhiaAereaStatus.valueOf(request.status().toUpperCase()));
         } else {
             companhia.setStatus(CompanhiaAereaStatus.ATIVA);
         }
 
-        return companhiaAereaRepository.save(companhia);
+        return toResponse(companhiaAereaRepository.save(companhia));
     }
 
-    // Deletar companhia aérea por ID
     public void deletarCompanhia(Long id) {
         if (!companhiaAereaRepository.existsById(id)) {
             throw new NotFoundCompanhiaAereaException();
@@ -81,16 +98,15 @@ public class CompanhiaAereaService {
         companhiaAereaRepository.deleteById(id);
     }
 
-    // Atualizar companhia aérea existente
-    public CompanhiaAerea atualizarCompanhia(Long id, CompanhiaAereaDTO companhiaAtualizada) {
-        CompanhiaAerea companhiaExistente = companhiaAereaRepository.findById(id)
-                .orElseThrow(() -> new NotFoundCompanhiaAereaException());
+    public CompanhiaAereaResponse atualizarCompanhia(Long id, CompanhiaAereaRequest request) {
+        CompanhiaAerea companhia = companhiaAereaRepository.findById(id)
+                .orElseThrow(NotFoundCompanhiaAereaException::new);
 
-        companhiaExistente.setNome(companhiaAtualizada.nome());
-        companhiaExistente.setCnpj(companhiaAtualizada.cnpj());
-        companhiaExistente.setSeguroAeronave(companhiaAtualizada.seguroAeronave());
-        companhiaExistente.setStatus(CompanhiaAereaStatus.valueOf(companhiaAtualizada.status().toUpperCase()));
+        companhia.setNome(request.nome());
+        companhia.setCnpj(request.cnpj());
+        companhia.setSeguroAeronave(request.seguroAeronave());
+        companhia.setStatus(CompanhiaAereaStatus.valueOf(request.status().toUpperCase()));
 
-        return companhiaAereaRepository.save(companhiaExistente);
+        return toResponse(companhiaAereaRepository.save(companhia));
     }
 }
