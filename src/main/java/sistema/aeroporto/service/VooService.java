@@ -112,8 +112,7 @@ public class VooService {
             throw new RuntimeException("Voo sem piloto");
         }
 
-        if (piloto.getStatus() == PilotoStatus.INATIVO ||
-                piloto.getStatus() == PilotoStatus.VENCIDO) {
+        if (piloto.getStatus() == PilotoStatus.INATIVO) {
             throw new RuntimeException("Piloto não pode iniciar o voo");
         }
 
