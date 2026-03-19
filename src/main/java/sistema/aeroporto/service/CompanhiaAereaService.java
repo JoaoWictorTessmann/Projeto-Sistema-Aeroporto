@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import sistema.aeroporto.dto.request.CompanhiaAereaUpdateRequest;
 import sistema.aeroporto.dto.request.CompanhiaAereaRequest;
 import sistema.aeroporto.dto.response.CompanhiaAereaResponse;
 import sistema.aeroporto.exception.CnpjInvalidoException;
@@ -26,13 +26,12 @@ public class CompanhiaAereaService {
     // Converte entity → Response
     private CompanhiaAereaResponse toResponse(CompanhiaAerea c) {
         return new CompanhiaAereaResponse(
-            c.getId(),
-            c.getNome(),
-            c.getCnpj(),
-            c.getDataFundacao(),
-            c.getSeguroAeronave(),
-            c.getStatus().name()
-        );
+                c.getId(),
+                c.getNome(),
+                c.getCnpj(),
+                c.getDataFundacao(),
+                c.getSeguroAeronave(),
+                c.getStatus().name());
     }
 
     public CompanhiaAereaResponse buscarPorId(Long id) {
@@ -55,7 +54,8 @@ public class CompanhiaAereaService {
     }
 
     public CompanhiaAereaResponse buscarPorCnpj(String cnpj) {
-        CompanhiaAerea c = companhiaAereaRepository.findByCnpj(cnpj)
+        String cnpjNormalizado = cnpj.replaceAll("\\D", "");
+        CompanhiaAerea c = companhiaAereaRepository.findByCnpj(cnpjNormalizado)
                 .orElseThrow(NotFoundCompanhiaAereaException::new);
         return toResponse(c);
     }
@@ -66,10 +66,12 @@ public class CompanhiaAereaService {
     }
 
     public CompanhiaAereaResponse salvarCompanhia(CompanhiaAereaRequest request) {
-        if (!CnpjUtils.validarCnpj(request.cnpj())) {
+        String cnpj = request.cnpj().replaceAll("\\D", "");
+
+        if (!CnpjUtils.validarCnpj(cnpj)) {
             throw new CnpjInvalidoException();
         }
-        if (companhiaAereaRepository.existsByCnpj(request.cnpj())) {
+        if (companhiaAereaRepository.existsByCnpj(cnpj)) {
             throw new CnpjJaCadastradoException();
         }
         if (companhiaAereaRepository.existsByNome(request.nome())) {
@@ -78,7 +80,7 @@ public class CompanhiaAereaService {
 
         CompanhiaAerea companhia = new CompanhiaAerea();
         companhia.setNome(request.nome());
-        companhia.setCnpj(request.cnpj());
+        companhia.setCnpj(cnpj);
         companhia.setDataFundacao(request.dataFundacao() != null ? request.dataFundacao() : LocalDate.now());
         companhia.setSeguroAeronave(request.seguroAeronave());
 
@@ -98,12 +100,17 @@ public class CompanhiaAereaService {
         companhiaAereaRepository.deleteById(id);
     }
 
-    public CompanhiaAereaResponse atualizarCompanhia(Long id, CompanhiaAereaRequest request) {
+    public CompanhiaAereaResponse atualizarCompanhia(Long id, CompanhiaAereaUpdateRequest request) {
         CompanhiaAerea companhia = companhiaAereaRepository.findById(id)
                 .orElseThrow(NotFoundCompanhiaAereaException::new);
 
+        companhiaAereaRepository.findByNome(request.nome())
+                .ifPresent(existente -> {
+                    if (!existente.getId().equals(id)) {
+                        throw new NomeJaCadastradoException();
+                    }
+                });
         companhia.setNome(request.nome());
-        companhia.setCnpj(request.cnpj());
         companhia.setSeguroAeronave(request.seguroAeronave());
         companhia.setStatus(CompanhiaAereaStatus.valueOf(request.status().toUpperCase()));
 
