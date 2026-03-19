@@ -2,10 +2,10 @@ package sistema.aeroporto.dto.request;
 
 import java.time.LocalDate;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Max;
 
 public record PilotoRequest(
 
@@ -24,12 +24,9 @@ public record PilotoRequest(
 
     LocalDate dataRenovacao,
 
-    @NotBlank(message = "Matrícula é obrigatória")
-    String matricula,
-
     @NotBlank(message = "Habilitação é obrigatória")
     String habilitacao,
 
-    @NotNull(message = "Status é obrigatório")
+    @NotBlank(message = "Status é obrigatório")
     String status
 ) {}
