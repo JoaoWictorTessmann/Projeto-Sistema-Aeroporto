@@ -8,10 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import sistema.aeroporto.dto.request.PilotoRequest;
+import sistema.aeroporto.dto.request.PilotoUpdateRequest;
 import sistema.aeroporto.dto.response.PilotoResponse;
 import sistema.aeroporto.exception.CpfInvalidoException;
 import sistema.aeroporto.exception.CpfJaCadastradoException;
 import sistema.aeroporto.exception.CpfObrigatorioException;
+import sistema.aeroporto.exception.MenorIdadeException;
 import sistema.aeroporto.exception.NomeObrigatorioException;
 import sistema.aeroporto.exception.NotFoundPilotoException;
 import sistema.aeroporto.model.Piloto;
@@ -28,16 +30,15 @@ public class PilotoService {
     // Converte entity → Response
     private PilotoResponse toResponse(Piloto p) {
         return new PilotoResponse(
-            p.getId(),
-            p.getNome(),
-            p.getIdade(),
-            p.getGenero(),
-            p.getCpf(),
-            p.getDataRenovacao(),
-            p.getMatricula(),
-            p.getHabilitacao(),
-            p.getStatus().name()
-        );
+                p.getId(),
+                p.getNome(),
+                p.getIdade(),
+                p.getGenero(),
+                p.getCpf(),
+                p.getDataRenovacao(),
+                p.getMatricula(),
+                p.getHabilitacao(),
+                p.getStatus().name());
     }
 
     public PilotoResponse buscarPorId(Long id) {
@@ -53,7 +54,8 @@ public class PilotoService {
     }
 
     public PilotoResponse buscarPorCpf(String cpf) {
-        return toResponse(pilotoRepository.findByCpf(cpf)
+        String cpfLimpo = CpfUtils.limpar(cpf);
+        return toResponse(pilotoRepository.findByCpf(cpfLimpo)
                 .orElseThrow(NotFoundPilotoException::new));
     }
 
@@ -63,7 +65,8 @@ public class PilotoService {
     }
 
     public Piloto buscarEntidadePorCpf(String cpf) {
-        return pilotoRepository.findByCpf(cpf)
+        String cpfLimpo = CpfUtils.limpar(cpf);
+        return pilotoRepository.findByCpf(cpfLimpo)
                 .orElseThrow(NotFoundPilotoException::new);
     }
 
@@ -73,6 +76,9 @@ public class PilotoService {
         }
         if (request.cpf() == null || request.cpf().isBlank()) {
             throw new CpfObrigatorioException();
+        }
+        if (request.idade() != null && request.idade() < 18) {
+            throw new MenorIdadeException();
         }
 
         String cpfLimpo = CpfUtils.limpar(request.cpf());
@@ -107,10 +113,13 @@ public class PilotoService {
     }
 
     public void deletarPiloto(Long id) {
+        if (!pilotoRepository.existsById(id)) {
+            throw new NotFoundPilotoException();
+        }
         pilotoRepository.deleteById(id);
     }
 
-    public PilotoResponse atualizarPiloto(Long id, PilotoRequest request) {
+    public PilotoResponse atualizarPiloto(Long id, PilotoUpdateRequest request) {
         Piloto piloto = pilotoRepository.findById(id)
                 .orElseThrow(NotFoundPilotoException::new);
 
