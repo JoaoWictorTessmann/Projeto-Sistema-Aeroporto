@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import sistema.aeroporto.dto.request.VooRequest;
+import sistema.aeroporto.dto.request.VooUpdateRequest;
 import sistema.aeroporto.dto.response.CompanhiaAereaResponse;
 import sistema.aeroporto.dto.response.PilotoResponse;
 import sistema.aeroporto.dto.response.VooResponse;
@@ -34,41 +35,40 @@ public class VooService {
     private CompanhiaAereaRepository companhiaAereaRepository;
 
     private VooResponse toResponse(Voo v) {
-        PilotoResponse pilotoResponse = v.getPiloto() == null ? null : new PilotoResponse(
-            v.getPiloto().getId(),
-            v.getPiloto().getNome(),
-            v.getPiloto().getIdade(),
-            v.getPiloto().getGenero(),
-            v.getPiloto().getCpf(),
-            v.getPiloto().getDataRenovacao(),
-            v.getPiloto().getMatricula(),
-            v.getPiloto().getHabilitacao(),
-            v.getPiloto().getStatus().name()
-        );
+        PilotoResponse pilotoResponse = v.getPiloto() == null ? null
+                : new PilotoResponse(
+                        v.getPiloto().getId(),
+                        v.getPiloto().getNome(),
+                        v.getPiloto().getIdade(),
+                        v.getPiloto().getGenero(),
+                        v.getPiloto().getCpf(),
+                        v.getPiloto().getDataRenovacao(),
+                        v.getPiloto().getMatricula(),
+                        v.getPiloto().getHabilitacao(),
+                        v.getPiloto().getStatus().name());
 
-        CompanhiaAereaResponse companhiaResponse = v.getCompanhia() == null ? null : new CompanhiaAereaResponse(
-            v.getCompanhia().getId(),
-            v.getCompanhia().getNome(),
-            v.getCompanhia().getCnpj(),
-            v.getCompanhia().getDataFundacao(),
-            v.getCompanhia().getSeguroAeronave(),
-            v.getCompanhia().getStatus().name()
-        );
+        CompanhiaAereaResponse companhiaResponse = v.getCompanhia() == null ? null
+                : new CompanhiaAereaResponse(
+                        v.getCompanhia().getId(),
+                        v.getCompanhia().getNome(),
+                        v.getCompanhia().getCnpj(),
+                        v.getCompanhia().getDataFundacao(),
+                        v.getCompanhia().getSeguroAeronave(),
+                        v.getCompanhia().getStatus().name());
 
         return new VooResponse(
-            v.getId(),
-            pilotoResponse,
-            companhiaResponse,
-            v.getCodigo(),
-            v.getOrigem(),
-            v.getDestino(),
-            v.getHorarioPartidaPrevisto(),
-            v.getHorarioChegadaPrevisto(),
-            v.getHorarioPartidaReal(),
-            v.getHorarioChegadaReal(),
-            v.getMotivoCancelamento(),
-            v.getStatus().name()
-        );
+                v.getId(),
+                pilotoResponse,
+                companhiaResponse,
+                v.getCodigo(),
+                v.getOrigem(),
+                v.getDestino(),
+                v.getHorarioPartidaPrevisto(),
+                v.getHorarioChegadaPrevisto(),
+                v.getHorarioPartidaReal(),
+                v.getHorarioChegadaReal(),
+                v.getMotivoCancelamento(),
+                v.getStatus().name());
     }
 
     public VooResponse criarVoo(VooRequest request) {
@@ -148,6 +148,20 @@ public class VooService {
         return toResponse(vooRepository.save(voo));
     }
 
+    public VooResponse finalizarVoo(Long vooId) {
+        Voo voo = vooRepository.findById(vooId)
+                .orElseThrow(NotFoundVooException::new);
+
+        if (voo.getStatus() != VooStatus.EM_VOO) {
+            throw new SomenteEmVooException();
+        }
+
+        voo.setStatus(VooStatus.CONCLUIDO);
+        voo.setHorarioChegadaReal(LocalDateTime.now());
+
+        return toResponse(vooRepository.save(voo));
+    }
+
     public VooResponse cancelarVoo(Long vooId, String motivoCancelamento) {
         if (motivoCancelamento == null || motivoCancelamento.isBlank()) {
             throw new MotivoCancelamentoObrigatorioException();
@@ -175,18 +189,24 @@ public class VooService {
         return vooRepository.findByStatus(VooStatus.valueOf(status.toUpperCase()))
                 .stream().map(this::toResponse).toList();
     }
-//interessante como esse metodo funciona!!!
+
     public List<VooResponse> buscarPorPiloto(Long pilotoId) {
+        if (!pilotoRepository.existsById(pilotoId)) {
+            throw new NotFoundPilotoException();
+        }
         return vooRepository.findByPiloto_Id(pilotoId)
                 .stream().map(this::toResponse).toList();
     }
 
     public List<VooResponse> buscarPorCompanhia(Long companhiaId) {
+        if (!companhiaAereaRepository.existsById(companhiaId)) {
+            throw new NotFoundCompanhiaAereaException();
+        }
         return vooRepository.findByCompanhia_Id(companhiaId)
                 .stream().map(this::toResponse).toList();
     }
 
-    public VooResponse atualizarVoo(Long vooId, VooRequest request) {
+    public VooResponse atualizarVoo(Long vooId, VooUpdateRequest request) {
         Voo voo = vooRepository.findById(vooId)
                 .orElseThrow(NotFoundVooException::new);
 
@@ -201,5 +221,6 @@ public class VooService {
         }
 
         return toResponse(vooRepository.save(voo));
+
     }
 }
