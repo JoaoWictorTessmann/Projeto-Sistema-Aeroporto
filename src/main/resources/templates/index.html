@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AeroSys — Início</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/global.css}"/>
+    <style>
+        .hero {
+            position: relative;
+            height: 480px;
+            background: linear-gradient(135deg, #0b2a52 0%, #0b4f9e 60%, #1a6fd4 100%);
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1400&q=80') center/cover no-repeat;
+            opacity: .18;
+        }
+        .hero-grid {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+            background-size: 48px 48px;
+        }
+        .hero-content {
+            position: relative;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            color: #fff;
+        }
+        .hero-eyebrow {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,.6);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .hero-eyebrow::before {
+            content: '';
+            display: inline-block;
+            width: 24px; height: 2px;
+            background: rgba(255,255,255,.4);
+        }
+        .hero-title {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(32px, 5vw, 52px);
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: -1px;
+            margin-bottom: 16px;
+        }
+        .hero-title span { color: #7eb8f7; }
+        .hero-desc {
+            font-size: 16px;
+            color: rgba(255,255,255,.75);
+            max-width: 480px;
+            margin-bottom: 32px;
+            line-height: 1.7;
+        }
+        .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+        .hero-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all .2s ease;
+        }
+        .hero-btn-primary { background: #fff; color: #0b4f9e; }
+        .hero-btn-primary:hover { background: #e8f0fb; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,.2); }
+        .hero-btn-secondary { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.25); }
+        .hero-btn-secondary:hover { background: rgba(255,255,255,.2); }
+        .hero-plane { position: absolute; right: 8%; bottom: 20%; font-size: 120px; opacity: .08; transform: rotate(-15deg); pointer-events: none; }
+        .quick-access { max-width: 1200px; margin: -36px auto 0; padding: 0 24px; position: relative; z-index: 10; }
+        .quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .quick-card {
+            background: #fff; border: 1px solid #dde2ec; border-radius: 14px;
+            padding: 24px; text-decoration: none; color: inherit;
+            display: flex; align-items: center; gap: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,.08); transition: all .2s ease;
+        }
+        .quick-card:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,.12); border-color: #1a6fd4; }
+        .quick-icon { width: 48px; height: 48px; border-radius: 12px; background: #e8f0fb; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        .quick-label { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: #0f1923; margin-bottom: 2px; }
+        .quick-desc { font-size: 12px; color: #64748b; }
+        .home-section { max-width: 1200px; margin: 56px auto 0; padding: 0 24px; }
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .section-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: #0f1923; }
+        @media (max-width: 768px) { .quick-grid { grid-template-columns: 1fr; } .hero { height: 420px; } }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<section class="hero">
+    <div class="hero-grid"></div>
+    <div class="hero-content">
+        <p class="hero-eyebrow">Sistema de Gerenciamento</p>
+        <h1 class="hero-title">Controle total<br>do seu <span>aeroporto</span></h1>
+        <p class="hero-desc">Gerencie voos, pilotos e companhias aéreas em uma plataforma centralizada, eficiente e moderna.</p>
+        <div class="hero-actions">
+            <a th:href="@{/voos}" class="hero-btn hero-btn-primary">✈ Ver Voos</a>
+            <a th:href="@{/voos/novo}" class="hero-btn hero-btn-secondary">+ Novo Voo</a>
+        </div>
+    </div>
+    <div class="hero-plane">✈</div>
+</section>
+
+<div class="quick-access">
+    <div class="quick-grid">
+        <a th:href="@{/voos}" class="quick-card">
+            <div class="quick-icon">✈</div>
+            <div><div class="quick-label">Voos</div><div class="quick-desc">Gerenciar e acompanhar voos</div></div>
+        </a>
+        <a th:href="@{/pilotos}" class="quick-card">
+            <div class="quick-icon">👨‍✈️</div>
+            <div><div class="quick-label">Pilotos</div><div class="quick-desc">Cadastro e habilitações</div></div>
+        </a>
+        <a th:href="@{/companhias}" class="quick-card">
+            <div class="quick-icon">🏢</div>
+            <div><div class="quick-label">Companhias</div><div class="quick-desc">Companhias aéreas cadastradas</div></div>
+        </a>
+    </div>
+</div>
+
+<section class="home-section">
+    <div class="section-header">
+        <h2 class="section-title">Voos Recentes</h2>
+        <a th:href="@{/voos}" class="btn btn-secondary btn-sm">Ver todos →</a>
+    </div>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+            <tr>
+                <th>Código</th><th>Origem</th><th>Destino</th>
+                <th>Partida Prevista</th><th>Piloto</th><th>Companhia</th><th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="voo, vooStat : ${voos}" th:if="${vooStat.index < 5}">
+                <td><a th:href="@{/voos/{id}(id=${voo.id})}" class="table-link" th:text="${voo.codigo}"></a></td>
+                <td class="text-bold" th:text="${voo.origem}"></td>
+                <td class="text-bold" th:text="${voo.destino}"></td>
+                <td th:text="${#temporals.format(voo.horarioPartidaPrevisto, 'dd/MM/yyyy HH:mm')}"></td>
+                <td th:text="${voo.piloto?.nome}"></td>
+                <td th:text="${voo.companhia?.nome}"></td>
+                <td><span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(voo.status)}" th:text="${voo.status}"></span></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(voos)}">
+                <td colspan="7"><div class="empty-state"><div class="empty-state-icon">✈</div><div class="empty-state-text">Nenhum voo cadastrado ainda.</div></div></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<footer class="footer">
+    <div class="footer-inner">© 2026 AeroSys — Sistema de Gerenciamento Aeroportuário</div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AeroSys — Voos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/global.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="page">
+    <nav class="breadcrumb">
+        <a th:href="@{/}">Início</a>
+        <span class="breadcrumb-sep">›</span>
+        <span>Voos</span>
+    </nav>
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Voos</h1>
+            <p class="page-subtitle">Gerencie todos os voos cadastrados no sistema</p>
+        </div>
+        <a th:href="@{/voos/novo}" class="btn btn-primary">✈ Novo Voo</a>
+    </div>
+    <div class="filter-bar">
+        <a th:href="@{/voos}"                  class="btn btn-secondary btn-sm">Todos</a>
+        <a th:href="@{/voos/status/AGENDADO}"  class="btn btn-sm badge-agendado-btn">● Agendado</a>
+        <a th:href="@{/voos/status/EM_VOO}"    class="btn btn-sm badge-em_voo-btn">● Em Voo</a>
+        <a th:href="@{/voos/status/CONCLUIDO}" class="btn btn-sm badge-concluido-btn">● Concluído</a>
+        <a th:href="@{/voos/status/CANCELADO}" class="btn btn-sm badge-cancelado-btn">● Cancelado</a>
+    </div>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+            <tr>
+                <th>Código</th><th>Origem</th><th>Destino</th>
+                <th>Partida Prevista</th><th>Chegada Prevista</th>
+                <th>Piloto</th><th>Companhia</th><th>Status</th><th>Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="voo : ${voos}">
+                <td><a th:href="@{/voos/{id}(id=${voo.id})}" class="table-link" th:text="${voo.codigo}"></a></td>
+                <td class="text-bold" th:text="${voo.origem}"></td>
+                <td class="text-bold" th:text="${voo.destino}"></td>
+                <td th:text="${#temporals.format(voo.horarioPartidaPrevisto, 'dd/MM/yy HH:mm')}"></td>
+                <td th:text="${#temporals.format(voo.horarioChegadaPrevisto, 'dd/MM/yy HH:mm')}"></td>
+                <td th:text="${voo.piloto?.nome}"></td>
+                <td th:text="${voo.companhia?.nome}"></td>
+                <td><span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(voo.status)}" th:text="${voo.status}"></span></td>
+                <td><a th:href="@{/voos/{id}(id=${voo.id})}" class="btn btn-secondary btn-sm">Ver</a></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(voos)}">
+                <td colspan="9"><div class="empty-state"><div class="empty-state-icon">✈</div><div class="empty-state-text">Nenhum voo encontrado.</div></div></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<footer class="footer"><div class="footer-inner">© 2026 AeroSys — Sistema de Gerenciamento Aeroportuário</div></footer>
+</body>
+</html>

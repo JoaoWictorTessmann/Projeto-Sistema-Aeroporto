@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AeroSys — Detalhe da Companhia</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/global.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="page">
+    <nav class="breadcrumb">
+        <a th:href="@{/}">Início</a><span class="breadcrumb-sep">›</span>
+        <a th:href="@{/companhias}">Companhias</a><span class="breadcrumb-sep">›</span>
+        <span th:text="${companhia.nome}"></span>
+    </nav>
+    <div class="page-header">
+        <div><h1 class="page-title" th:text="${companhia.nome}"></h1><p class="page-subtitle" th:text="${companhia.cnpj}"></p></div>
+        <div class="page-header-actions">
+            <span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(companhia.status)}" th:text="${companhia.status}"></span>
+            <a th:href="@{/companhias/editar/{id}(id=${companhia.id})}" class="btn btn-secondary">Editar</a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><span class="card-title">Dados da Companhia</span></div>
+        <div class="card-body">
+            <div class="detail-grid">
+                <div class="detail-item"><span class="detail-label">Nome</span><span class="detail-value" th:text="${companhia.nome}"></span></div>
+                <div class="detail-item"><span class="detail-label">CNPJ</span><span class="detail-value" th:text="${companhia.cnpj}"></span></div>
+                <div class="detail-item"><span class="detail-label">Data de Fundação</span><span class="detail-value" th:text="${#temporals.format(companhia.dataFundacao, 'dd/MM/yyyy')}"></span></div>
+                <div class="detail-item">
+                    <span class="detail-label">Seguro de Aeronave</span>
+                    <span class="icon-yes" th:if="${companhia.seguroAeronave}">✔ Sim</span>
+                    <span class="icon-no"  th:unless="${companhia.seguroAeronave}">✘ Não</span>
+                </div>
+                <div class="detail-item"><span class="detail-label">Status</span><span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(companhia.status)}" th:text="${companhia.status}"></span></div>
+            </div>
+        </div>
+    </div>
+    <div class="form-actions"><a th:href="@{/companhias}" class="btn btn-secondary">← Voltar</a></div>
+</div>
+
+<footer class="footer"><div class="footer-inner">© 2026 AeroSys — Sistema de Gerenciamento Aeroportuário</div></footer>
+</body>
+</html>

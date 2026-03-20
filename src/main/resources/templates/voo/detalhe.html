@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AeroSys — Detalhe do Voo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/global.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="page">
+    <nav class="breadcrumb">
+        <a th:href="@{/}">Início</a><span class="breadcrumb-sep">›</span>
+        <a th:href="@{/voos}">Voos</a><span class="breadcrumb-sep">›</span>
+        <span th:text="${voo.codigo}"></span>
+    </nav>
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${voo.codigo}"></h1>
+            <p class="page-subtitle"><span th:text="${voo.origem}"></span> → <span th:text="${voo.destino}"></span></p>
+        </div>
+        <span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(voo.status)}" th:text="${voo.status}"></span>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><span class="card-title">Informações do Voo</span></div>
+        <div class="card-body">
+            <div class="detail-grid">
+                <div class="detail-item"><span class="detail-label">Código</span><span class="detail-value" th:text="${voo.codigo}"></span></div>
+                <div class="detail-item"><span class="detail-label">Origem</span><span class="detail-value" th:text="${voo.origem}"></span></div>
+                <div class="detail-item"><span class="detail-label">Destino</span><span class="detail-value" th:text="${voo.destino}"></span></div>
+                <div class="detail-item"><span class="detail-label">Partida Prevista</span><span class="detail-value" th:text="${#temporals.format(voo.horarioPartidaPrevisto, 'dd/MM/yyyy HH:mm')}"></span></div>
+                <div class="detail-item"><span class="detail-label">Chegada Prevista</span><span class="detail-value" th:text="${#temporals.format(voo.horarioChegadaPrevisto, 'dd/MM/yyyy HH:mm')}"></span></div>
+                <div class="detail-item"><span class="detail-label">Partida Real</span><span class="detail-value" th:text="${voo.horarioPartidaReal != null} ? ${#temporals.format(voo.horarioPartidaReal, 'dd/MM/yyyy HH:mm')} : '—'"></span></div>
+                <div class="detail-item"><span class="detail-label">Chegada Real</span><span class="detail-value" th:text="${voo.horarioChegadaReal != null} ? ${#temporals.format(voo.horarioChegadaReal, 'dd/MM/yyyy HH:mm')} : '—'"></span></div>
+                <div class="detail-item" th:if="${voo.motivoCancelamento != null and !voo.motivoCancelamento.isEmpty()}">
+                    <span class="detail-label">Motivo Cancelamento</span>
+                    <span class="detail-value text-danger" th:text="${voo.motivoCancelamento}"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-grid-2">
+        <div class="card">
+            <div class="card-header"><span class="card-title">👨‍✈️ Piloto</span></div>
+            <div class="card-body">
+                <div class="detail-grid">
+                    <div class="detail-item"><span class="detail-label">Nome</span><span class="detail-value" th:text="${voo.piloto?.nome}"></span></div>
+                    <div class="detail-item"><span class="detail-label">Matrícula</span><span class="detail-value" th:text="${voo.piloto?.matricula}"></span></div>
+                    <div class="detail-item"><span class="detail-label">Habilitação</span><span class="detail-value" th:text="${voo.piloto?.habilitacao}"></span></div>
+                    <div class="detail-item"><span class="detail-label">Status</span><span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(voo.piloto?.status)}" th:text="${voo.piloto?.status}"></span></div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><span class="card-title">🏢 Companhia</span></div>
+            <div class="card-body">
+                <div class="detail-grid">
+                    <div class="detail-item"><span class="detail-label">Nome</span><span class="detail-value" th:text="${voo.companhia?.nome}"></span></div>
+                    <div class="detail-item"><span class="detail-label">CNPJ</span><span class="detail-value" th:text="${voo.companhia?.cnpj}"></span></div>
+                    <div class="detail-item"><span class="detail-label">Seguro</span><span class="detail-value" th:text="${voo.companhia?.seguroAeronave ? 'Sim' : 'Não'}"></span></div>
+                    <div class="detail-item"><span class="detail-label">Status</span><span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(voo.companhia?.status)}" th:text="${voo.companhia?.status}"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <a th:href="@{/voos}" class="btn btn-secondary">← Voltar</a>
+    </div>
+</div>
+
+<footer class="footer"><div class="footer-inner">© 2026 AeroSys — Sistema de Gerenciamento Aeroportuário</div></footer>
+</body>
+</html>

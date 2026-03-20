@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AeroSys — Companhias</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/global.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="page">
+    <nav class="breadcrumb">
+        <a th:href="@{/}">Início</a><span class="breadcrumb-sep">›</span><span>Companhias Aéreas</span>
+    </nav>
+    <div class="page-header">
+        <div><h1 class="page-title">Companhias Aéreas</h1><p class="page-subtitle">Cadastro e gerenciamento de companhias</p></div>
+        <a th:href="@{/companhias/novo}" class="btn btn-primary">+ Nova Companhia</a>
+    </div>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+            <tr><th>Nome</th><th>CNPJ</th><th>Fundação</th><th>Seguro</th><th>Status</th><th>Ações</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="companhia : ${companhias}">
+                <td class="text-bold" th:text="${companhia.nome}"></td>
+                <td><span class="code-tag" th:text="${companhia.cnpj}"></span></td>
+                <td th:text="${#temporals.format(companhia.dataFundacao, 'dd/MM/yyyy')}"></td>
+                <td>
+                    <span class="icon-yes" th:if="${companhia.seguroAeronave}">✔ Sim</span>
+                    <span class="icon-no"  th:unless="${companhia.seguroAeronave}">✘ Não</span>
+                </td>
+                <td><span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(companhia.status)}" th:text="${companhia.status}"></span></td>
+                <td class="actions-cell">
+                    <a th:href="@{/companhias/{id}(id=${companhia.id})}" class="btn btn-secondary btn-sm">Ver</a>
+                    <a th:href="@{/companhias/editar/{id}(id=${companhia.id})}" class="btn btn-secondary btn-sm">Editar</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(companhias)}">
+                <td colspan="6"><div class="empty-state"><div class="empty-state-icon">🏢</div><div class="empty-state-text">Nenhuma companhia cadastrada ainda.</div></div></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<footer class="footer"><div class="footer-inner">© 2026 AeroSys — Sistema de Gerenciamento Aeroportuário</div></footer>
+</body>
+</html>

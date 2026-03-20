@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AeroSys — Novo Voo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/global.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="page">
+    <nav class="breadcrumb">
+        <a th:href="@{/}">Início</a><span class="breadcrumb-sep">›</span>
+        <a th:href="@{/voos}">Voos</a><span class="breadcrumb-sep">›</span>
+        <span th:text="${voo != null} ? 'Editar' : 'Novo Voo'"></span>
+    </nav>
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${voo != null} ? 'Editar Voo' : 'Novo Voo'"></h1>
+            <p class="page-subtitle">Preencha os dados abaixo para cadastrar o voo</p>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div id="alert-area"></div>
+            <div class="form-grid">
+                <div class="form-group"><label for="codigo">Código do Voo</label><input type="text" id="codigo" placeholder="Ex: AD1234" maxlength="10" th:value="${voo?.codigo}"/></div>
+                <div class="form-group"><label for="origem">Origem (ICAO)</label><input type="text" id="origem" placeholder="Ex: SBGR" maxlength="4" th:value="${voo?.origem}"/></div>
+                <div class="form-group"><label for="destino">Destino (ICAO)</label><input type="text" id="destino" placeholder="Ex: SBBR" maxlength="4" th:value="${voo?.destino}"/></div>
+                <div class="form-group">
+                    <label for="pilotoId">Piloto</label>
+                    <select id="pilotoId">
+                        <option value="">Selecione um piloto...</option>
+                        <option th:each="p : ${pilotos}" th:value="${p.id}" th:text="${p.nome} + ' — ' + ${p.matricula}" th:selected="${voo?.piloto?.id == p.id}"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="companhiaId">Companhia Aérea</label>
+                    <select id="companhiaId">
+                        <option value="">Selecione uma companhia...</option>
+                        <option th:each="c : ${companhias}" th:value="${c.id}" th:text="${c.nome}" th:selected="${voo?.companhia?.id == c.id}"></option>
+                    </select>
+                </div>
+                <div class="form-group"><label for="horarioPartidaPrevisto">Partida Prevista</label><input type="datetime-local" id="horarioPartidaPrevisto" th:value="${voo?.horarioPartidaPrevisto}"/></div>
+                <div class="form-group"><label for="horarioChegadaPrevisto">Chegada Prevista</label><input type="datetime-local" id="horarioChegadaPrevisto" th:value="${voo?.horarioChegadaPrevisto}"/></div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" onclick="salvarVoo()">✈ <span th:text="${voo != null} ? 'Salvar Alterações' : 'Cadastrar Voo'"></span></button>
+                <a th:href="@{/voos}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="footer"><div class="footer-inner">© 2026 AeroSys — Sistema de Gerenciamento Aeroportuário</div></footer>
+
+<script th:inline="javascript">
+    const vooId = /*[[${voo?.id}]]*/ null;
+    async function salvarVoo() {
+        const body = {
+            codigo: document.getElementById('codigo').value,
+            origem: document.getElementById('origem').value.toUpperCase(),
+            destino: document.getElementById('destino').value.toUpperCase(),
+            pilotoId: parseInt(document.getElementById('pilotoId').value),
+            companhiaId: parseInt(document.getElementById('companhiaId').value),
+            horarioPartidaPrevisto: document.getElementById('horarioPartidaPrevisto').value,
+            horarioChegadaPrevisto: document.getElementById('horarioChegadaPrevisto').value,
+        };
+        const url = vooId ? `/api/voos/${vooId}` : '/api/voos';
+        const method = vooId ? 'PUT' : 'POST';
+        try {
+            const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const data = await res.json();
+            if (res.ok) { window.location.href = '/voos/' + data.id; }
+            else { showAlert(data.message || 'Erro ao salvar voo.'); }
+        } catch (e) { showAlert('Erro de conexão com o servidor.'); }
+    }
+    function showAlert(msg) {
+        document.getElementById('alert-area').innerHTML = `<div class="alert alert-error">${msg}</div>`;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>
+</body>
+</html>

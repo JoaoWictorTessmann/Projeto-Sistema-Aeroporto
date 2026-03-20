@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AeroSys — Detalhe do Piloto</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/global.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="page">
+    <nav class="breadcrumb">
+        <a th:href="@{/}">Início</a><span class="breadcrumb-sep">›</span>
+        <a th:href="@{/pilotos}">Pilotos</a><span class="breadcrumb-sep">›</span>
+        <span th:text="${piloto.nome}"></span>
+    </nav>
+    <div class="page-header">
+        <div><h1 class="page-title" th:text="${piloto.nome}"></h1><p class="page-subtitle" th:text="${piloto.matricula}"></p></div>
+        <div class="page-header-actions">
+            <span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(piloto.status)}" th:text="${piloto.status}"></span>
+            <a th:href="@{/pilotos/editar/{id}(id=${piloto.id})}" class="btn btn-secondary">Editar</a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><span class="card-title">Dados do Piloto</span></div>
+        <div class="card-body">
+            <div class="detail-grid">
+                <div class="detail-item"><span class="detail-label">Nome Completo</span><span class="detail-value" th:text="${piloto.nome}"></span></div>
+                <div class="detail-item"><span class="detail-label">Matrícula</span><span class="detail-value" th:text="${piloto.matricula}"></span></div>
+                <div class="detail-item"><span class="detail-label">CPF</span><span class="detail-value" th:text="${piloto.cpf}"></span></div>
+                <div class="detail-item"><span class="detail-label">Idade</span><span class="detail-value" th:text="${piloto.idade} + ' anos'"></span></div>
+                <div class="detail-item"><span class="detail-label">Gênero</span><span class="detail-value" th:text="${piloto.genero == 'M'} ? 'Masculino' : 'Feminino'"></span></div>
+                <div class="detail-item"><span class="detail-label">Habilitação</span><span class="detail-value" th:text="${piloto.habilitacao}"></span></div>
+                <div class="detail-item"><span class="detail-label">Renovação da Licença</span><span class="detail-value" th:text="${#temporals.format(piloto.dataRenovacao, 'dd/MM/yyyy')}"></span></div>
+                <div class="detail-item"><span class="detail-label">Status</span><span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(piloto.status)}" th:text="${piloto.status}"></span></div>
+            </div>
+        </div>
+    </div>
+    <div class="form-actions"><a th:href="@{/pilotos}" class="btn btn-secondary">← Voltar</a></div>
+</div>
+
+<footer class="footer"><div class="footer-inner">© 2026 AeroSys — Sistema de Gerenciamento Aeroportuário</div></footer>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav th:fragment="navbar" class="navbar">
+    <div class="navbar-inner">
+        <a th:href="@{/}" class="navbar-brand">
+            <span class="brand-icon">✈</span>
+            <span class="brand-name">AeroSys</span>
+        </a>
+        <ul class="navbar-menu">
+            <li><a th:href="@{/voos}">Voos</a></li>
+            <li><a th:href="@{/pilotos}">Pilotos</a></li>
+            <li><a th:href="@{/companhias}">Companhias</a></li>
+            <li><a href="/docs" target="_blank" class="nav-api">API Docs</a></li>
+        </ul>
+    </div>
+</nav>
+</body>
+</html>

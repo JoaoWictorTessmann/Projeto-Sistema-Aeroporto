@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="pt-BR">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AeroSys — Nova Companhia</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/global.css}"/>
+</head>
+<body>
+
+<div th:replace="~{fragments/navbar :: navbar}"></div>
+
+<div class="page">
+    <nav class="breadcrumb">
+        <a th:href="@{/}">Início</a><span class="breadcrumb-sep">›</span>
+        <a th:href="@{/companhias}">Companhias</a><span class="breadcrumb-sep">›</span>
+        <span th:text="${companhia != null} ? 'Editar' : 'Nova Companhia'"></span>
+    </nav>
+    <div class="page-header">
+        <div><h1 class="page-title" th:text="${companhia != null} ? 'Editar Companhia' : 'Nova Companhia'"></h1><p class="page-subtitle">Preencha os dados da companhia aérea</p></div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div id="alert-area"></div>
+            <div class="form-grid">
+                <div class="form-group form-full"><label for="nome">Nome da Companhia</label><input type="text" id="nome" placeholder="Ex: Azul Linhas Aéreas" th:value="${companhia?.nome}"/></div>
+                <div class="form-group" th:unless="${companhia != null}"><label for="cnpj">CNPJ (somente números)</label><input type="text" id="cnpj" placeholder="Ex: 09296295000160" maxlength="14" th:value="${companhia?.cnpj}"/></div>
+                <div class="form-group" th:unless="${companhia != null}"><label for="dataFundacao">Data de Fundação</label><input type="date" id="dataFundacao" th:value="${companhia?.dataFundacao}"/></div>
+                <div class="form-group">
+                    <label for="seguroAeronave">Seguro de Aeronave</label>
+                    <select id="seguroAeronave">
+                        <option value="true"  th:selected="${companhia?.seguroAeronave == true}">Sim</option>
+                        <option value="false" th:selected="${companhia?.seguroAeronave == false}">Não</option>
+                    </select>
+                </div>
+                <div class="form-group" th:if="${companhia != null}">
+                    <label for="status">Status</label>
+                    <select id="status">
+                        <option value="ATIVA"   th:selected="${companhia?.status == 'ATIVA'}">Ativa</option>
+                        <option value="INATIVA" th:selected="${companhia?.status == 'INATIVA'}">Inativa</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" onclick="salvarCompanhia()"><span th:text="${companhia != null} ? 'Salvar Alterações' : 'Cadastrar Companhia'"></span></button>
+                <a th:href="@{/companhias}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="footer"><div class="footer-inner">© 2026 AeroSys — Sistema de Gerenciamento Aeroportuário</div></footer>
+
+<script th:inline="javascript">
+    const companhiaId = /*[[${companhia?.id}]]*/ null;
+    async function salvarCompanhia() {
+        const body = {
+            nome: document.getElementById('nome').value,
+            cnpj: document.getElementById('cnpj')?.value,
+            dataFundacao: document.getElementById('dataFundacao')?.value,
+            seguroAeronave: document.getElementById('seguroAeronave').value === 'true',
+            status: document.getElementById('status')?.value,
+        };
+        const url = companhiaId ? `/api/companhias/${companhiaId}` : '/api/companhias';
+        const method = companhiaId ? 'PUT' : 'POST';
+        try {
+            const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const data = await res.json();
+            if (res.ok) { window.location.href = '/companhias/' + data.id; }
+            else { showAlert(data.message || 'Erro ao salvar companhia.'); }
+        } catch (e) { showAlert('Erro de conexão com o servidor.'); }
+    }
+    function showAlert(msg) {
+        document.getElementById('alert-area').innerHTML = `<div class="alert alert-error">${msg}</div>`;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+</script>
+</body>
+</html>
