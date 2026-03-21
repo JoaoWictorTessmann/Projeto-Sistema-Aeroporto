@@ -92,15 +92,38 @@ cd aeroporto
 CREATE DATABASE sistemaaeroporto;
 ```
 
-### 3. Configure o `application.properties`
+### 3. Adicione os scripts SQL ao projeto
 
-O arquivo está em `src/main/resources/application.properties`. Ajuste as credenciais conforme seu ambiente:
+Copie os arquivos `schema.sql` e `data.sql` (disponíveis na raiz do repositório) para `src/main/resources/`:
+
+```
+src/main/resources/
+├── application.properties
+├── schema.sql          ← cria as tabelas automaticamente
+├── data.sql            ← insere dados de exemplo
+└── templates/
+    └── ...
+```
+
+O Spring Boot executa esses arquivos automaticamente ao subir, na seguinte ordem:
+1. `schema.sql` — cria as tabelas (com `IF NOT EXISTS`)
+2. `data.sql` — insere os dados de exemplo (pilotos, companhias e voos)
+
+> ⚠️ O `data.sql` usa `INSERT` simples. Se reiniciar a aplicação com dados já existentes no banco, ocorrerão erros de constraint. Nesse caso, limpe as tabelas antes ou remova o `data.sql` após a primeira execução.
+
+### 4. Configure o `application.properties`
+
+O arquivo está em `src/main/resources/application.properties`. Ajuste as credenciais e adicione as propriedades de inicialização SQL:
 
 ```properties
 spring.datasource.url=jdbc:mysql://localhost:3306/sistemaaeroporto?useSSL=false&serverTimezone=UTC
 spring.datasource.username=root
 spring.datasource.password=SUA_SENHA
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# Necessário para o Spring Boot executar schema.sql e data.sql com JPA/Hibernate
+spring.jpa.defer-datasource-initialization=true
+spring.sql.init.mode=always
 
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
@@ -112,9 +135,9 @@ springdoc.swagger-ui.operationsSorter=alpha
 springdoc.swagger-ui.tagsSorter=alpha
 ```
 
-> ⚠️ O Hibernate cria as tabelas automaticamente com `ddl-auto=update`. Não é necessário criar as tabelas manualmente.
+> 💡 `spring.jpa.defer-datasource-initialization=true` garante que o Hibernate inicializa o schema antes do Spring executar os scripts SQL. Sem essa propriedade, o `data.sql` pode rodar antes das tabelas existirem.
 
-### 4. Instale as dependências
+### 5. Instale as dependências
 
 ```bash
 mvn clean install
@@ -501,7 +524,7 @@ AGENDADO ──► VOANDO ──► CONCLUIDO
 
 ```
 ┌──────────────────┐       ┌──────────────────┐
-│  companhia_aerea │       │      piloto      │
+│  companhia_aerea │       │      piloto       │
 ├──────────────────┤       ├──────────────────┤
 │ id (PK)          │       │ id (PK)          │
 │ nome             │       │ nome             │
