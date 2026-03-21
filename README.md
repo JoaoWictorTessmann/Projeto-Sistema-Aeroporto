@@ -523,7 +523,7 @@ AGENDADO ──► VOANDO ──► CONCLUIDO
 
 ```
 ┌──────────────────┐       ┌──────────────────┐
-│  companhia_aerea │       │      piloto       │
+│  companhia_aerea │       │      piloto      │
 ├──────────────────┤       ├──────────────────┤
 │ id (PK)          │       │ id (PK)          │
 │ nome             │       │ nome             │
@@ -566,7 +566,7 @@ O projeto possui testes **unitários** com Mockito e testes de **integração** 
 ### Rodar todos os testes
 
 ```bash
-mvn test
+.\mvnw test
 ```
 
 ### Configuração do ambiente de testes
