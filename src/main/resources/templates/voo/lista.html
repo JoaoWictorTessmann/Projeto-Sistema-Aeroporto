@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com"/>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" th:href="@{/css/global.css}"/>
+    <link rel="icon" type="image/png" th:href="@{/img/favicon.png}"/>
 </head>
 <body>
 
@@ -28,7 +29,7 @@
     <div class="filter-bar">
         <a th:href="@{/voos}"                  class="btn btn-secondary btn-sm">Todos</a>
         <a th:href="@{/voos/status/AGENDADO}"  class="btn btn-sm badge-agendado-btn">● Agendado</a>
-        <a th:href="@{/voos/status/EM_VOO}"    class="btn btn-sm badge-em_voo-btn">● Em Voo</a>
+        <a th:href="@{/voos/status/VOANDO}"    class="btn btn-sm badge-voando-btn">● Voando</a>
         <a th:href="@{/voos/status/CONCLUIDO}" class="btn btn-sm badge-concluido-btn">● Concluído</a>
         <a th:href="@{/voos/status/CANCELADO}" class="btn btn-sm badge-cancelado-btn">● Cancelado</a>
     </div>
