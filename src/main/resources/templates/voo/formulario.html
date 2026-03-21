@@ -62,6 +62,12 @@
 <script th:inline="javascript">
     const vooId = /*[[${voo?.id}]]*/ null;
     async function salvarVoo() {
+         const anoMaximo = new Date().getFullYear() + 2;
+
+        if (partida.getFullYear() > anoMaximo || chegada.getFullYear() > anoMaximo) {
+            showAlert('Data inválida. Verifique o ano informado.');
+            return;
+        }
         const body = {
             codigo: document.getElementById('codigo').value,
             origem: document.getElementById('origem').value.toUpperCase(),
