@@ -6,7 +6,7 @@ public enum VooStatus {
     CANCELADO,
     CONCLUIDO;
 
-     public static VooStatus fromString(String status) {
+    public static VooStatus fromString(String status) {
         return VooStatus.valueOf(status.toUpperCase());
     }
 }

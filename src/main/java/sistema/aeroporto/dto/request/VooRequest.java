@@ -7,23 +7,17 @@ import jakarta.validation.constraints.NotNull;
 
 public record VooRequest(
 
-    @NotNull(message = "Piloto é obrigatório")
-    Long pilotoId,
+        @NotNull(message = "Piloto é obrigatório") Long pilotoId,
 
-    @NotNull(message = "Companhia é obrigatória")
-    Long companhiaId,
+        @NotNull(message = "Companhia é obrigatória") Long companhiaId,
 
-    @NotBlank(message = "Código é obrigatório")
-    String codigo,
+        @NotBlank(message = "Código é obrigatório") String codigo,
 
-    @NotBlank(message = "Origem é obrigatória")
-    String origem,
+        @NotBlank(message = "Origem é obrigatória") String origem,
 
-    @NotBlank(message = "Destino é obrigatório")
-    String destino,
+        @NotBlank(message = "Destino é obrigatório") String destino,
 
-    @NotNull(message = "Horário de partida previsto é obrigatório")
-    LocalDateTime horarioPartidaPrevisto,
+        @NotNull(message = "Horário de partida previsto é obrigatório") LocalDateTime horarioPartidaPrevisto,
 
-    LocalDateTime horarioChegadaPrevisto
-) {}
+        LocalDateTime horarioChegadaPrevisto) {
+}

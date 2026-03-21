@@ -6,9 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 
 public record VooUpdateRequest(
 
-    LocalDateTime horarioPartidaReal,
-    LocalDateTime horarioChegadaReal,
+        LocalDateTime horarioPartidaReal,
+        LocalDateTime horarioChegadaReal,
 
-    @NotBlank(message = "Status é obrigatório")
-    String status
-) {}
+        @NotBlank(message = "Status é obrigatório") String status) {
+}

@@ -10,9 +10,10 @@ public interface PilotoRepository extends JpaRepository<Piloto, Long> {
 
     // Método para buscar piloto por CPF
     Optional<Piloto> findByCpf(String cpf);
-    
+
     // Método para buscar piloto pelo Nome
     Optional<Piloto> findByNome(String nome);
+
     // Método para verificar existência de CPF
     boolean existsByCpf(String cpf);
 

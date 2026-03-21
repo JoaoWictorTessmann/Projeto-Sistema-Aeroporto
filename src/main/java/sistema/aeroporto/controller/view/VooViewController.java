@@ -35,7 +35,6 @@ public class VooViewController {
 
     @GetMapping("/novo")
     public String formularioNovo(Model model) {
-        // Passa pilotos e companhias para popular os selects do formulário
         model.addAttribute("pilotos", pilotoService.listarTodosPilotos());
         model.addAttribute("companhias", companhiaService.listarTodasCompanhias());
         return "voo/formulario";

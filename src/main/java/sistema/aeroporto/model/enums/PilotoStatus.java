@@ -4,7 +4,7 @@ public enum PilotoStatus {
     ATIVO,
     INATIVO;
 
-     public static PilotoStatus fromString(String status) {
+    public static PilotoStatus fromString(String status) {
         return PilotoStatus.valueOf(status.toUpperCase());
     }
 }

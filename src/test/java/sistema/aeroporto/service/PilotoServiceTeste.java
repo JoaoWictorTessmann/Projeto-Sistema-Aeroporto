@@ -92,7 +92,7 @@ public class PilotoServiceTeste {
 
     @Test
     void deveDeletarPiloto() {
-        when(pilotoRepository.existsById(1L)).thenReturn(true); 
+        when(pilotoRepository.existsById(1L)).thenReturn(true);
         doNothing().when(pilotoRepository).deleteById(1L);
 
         pilotoService.deletarPiloto(1L);

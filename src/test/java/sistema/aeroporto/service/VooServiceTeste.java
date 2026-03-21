@@ -46,7 +46,7 @@ public class VooServiceTeste {
     private CompanhiaAerea companhiaAtiva;
     private VooRequest vooRequest;
 
-    private static final Long PILOTO_ID    = 1L;
+    private static final Long PILOTO_ID = 1L;
     private static final Long COMPANHIA_ID = 10L;
     private static final String CODIGO_VOO = "VOO001";
 

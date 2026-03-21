@@ -5,12 +5,9 @@ import jakarta.validation.constraints.NotNull;
 
 public record CompanhiaAereaUpdateRequest(
 
-    @NotBlank(message = "Nome é obrigatório")
-    String nome,
+        @NotBlank(message = "Nome é obrigatório") String nome,
 
-    @NotNull(message = "Seguro de aeronave é obrigatório")
-    Boolean seguroAeronave,
+        @NotNull(message = "Seguro de aeronave é obrigatório") Boolean seguroAeronave,
 
-    @NotBlank(message = "Status é obrigatório")
-    String status
-) {}
+        @NotBlank(message = "Status é obrigatório") String status) {
+}

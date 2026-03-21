@@ -7,8 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import sistema.aeroporto.model.Voo;
 import sistema.aeroporto.model.enums.VooStatus;
 
-public interface VooRepository extends JpaRepository <Voo, Long> {
-    
+public interface VooRepository extends JpaRepository<Voo, Long> {
+
     // Método para buscar voos por destino
     List<Voo> findByDestino(String destino);
 
