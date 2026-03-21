@@ -62,7 +62,7 @@
             cnpj: document.getElementById('cnpj')?.value,
             dataFundacao: document.getElementById('dataFundacao')?.value,
             seguroAeronave: document.getElementById('seguroAeronave').value === 'true',
-            status: document.getElementById('status')?.value,
+            status: document.getElementById('status')?.value || 'ATIVA',
         };
         const url = companhiaId ? `/api/companhias/${companhiaId}` : '/api/companhias';
         const method = companhiaId ? 'PUT' : 'POST';

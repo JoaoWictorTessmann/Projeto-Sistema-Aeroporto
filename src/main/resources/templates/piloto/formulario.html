@@ -73,7 +73,7 @@
             idade: parseInt(document.getElementById('idade').value),
             genero: document.getElementById('genero').value,
             habilitacao: document.getElementById('habilitacao').value,
-            status: document.getElementById('status')?.value,
+            status: document.getElementById('status')?.value || 'ATIVO',
         };
         const url = pilotoId ? `/api/pilotos/${pilotoId}` : '/api/pilotos';
         const method = pilotoId ? 'PUT' : 'POST';
