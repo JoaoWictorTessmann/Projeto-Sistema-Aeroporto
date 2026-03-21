@@ -202,7 +202,7 @@ public class VooServiceTeste {
 
         VooResponse iniciado = vooService.iniciarVoo(5L);
 
-        assertEquals(VooStatus.EM_VOO.name(), iniciado.status());
+        assertEquals(VooStatus.VOANDO.name(), iniciado.status());
         assertNotNull(iniciado.horarioPartidaReal());
     }
 

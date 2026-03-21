@@ -275,7 +275,7 @@ tbody td {
 .badge-ativo, .badge-ativa, .badge-concluido    { background: var(--success-bg); color: var(--success); }
 .badge-inativo, .badge-inativa, .badge-cancelado { background: var(--danger-bg);  color: var(--danger); }
 .badge-agendado                                  { background: var(--info-bg);    color: var(--info); }
-.badge-em_voo                                    { background: var(--warning-bg); color: var(--warning); }
+.badge-voando                                    { background: var(--warning-bg); color: var(--warning); }
 .badge-afastado                                  { background: #f3f4f6;           color: #6b7280; }
 
 /* ── FORMULÁRIO ── */
@@ -456,7 +456,7 @@ tbody td {
 
 /* Botões de filtro de status */
 .badge-agendado-btn  { background: var(--info-bg);    color: var(--info);    border: 1px solid #bae6fd; }
-.badge-em_voo-btn    { background: var(--warning-bg); color: var(--warning); border: 1px solid #fde68a; }
+.badge-voando-btn    { background: var(--warning-bg); color: var(--warning); border: 1px solid #fde68a; }
 .badge-concluido-btn { background: var(--success-bg); color: var(--success); border: 1px solid #bbf7d0; }
 .badge-cancelado-btn { background: var(--danger-bg);  color: var(--danger);  border: 1px solid #f5c6c2; }
 

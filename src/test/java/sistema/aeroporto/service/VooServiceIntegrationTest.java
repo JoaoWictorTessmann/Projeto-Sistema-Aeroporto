@@ -187,7 +187,7 @@ public class VooServiceIntegrationTest {
 
         VooResponse iniciado = vooService.iniciarVoo(voo.id());
 
-        assertEquals(VooStatus.EM_VOO.name(), iniciado.status());
+        assertEquals(VooStatus.VOANDO.name(), iniciado.status());
         assertNotNull(iniciado.horarioPartidaReal());
     }
 

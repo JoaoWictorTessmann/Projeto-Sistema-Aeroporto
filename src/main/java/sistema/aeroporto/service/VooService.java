@@ -142,7 +142,7 @@ public class VooService {
             throw new PilotoInativoException();
         }
 
-        voo.setStatus(VooStatus.EM_VOO);
+        voo.setStatus(VooStatus.VOANDO);
         voo.setHorarioPartidaReal(LocalDateTime.now());
 
         return toResponse(vooRepository.save(voo));
@@ -152,7 +152,7 @@ public class VooService {
         Voo voo = vooRepository.findById(vooId)
                 .orElseThrow(NotFoundVooException::new);
 
-        if (voo.getStatus() != VooStatus.EM_VOO) {
+        if (voo.getStatus() != VooStatus.VOANDO) {
             throw new SomenteEmVooException();
         }
 

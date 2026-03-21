@@ -2,7 +2,7 @@ package sistema.aeroporto.model.enums;
 
 public enum VooStatus {
     AGENDADO,
-    EM_VOO,
+    VOANDO,
     CANCELADO,
     CONCLUIDO;
 
