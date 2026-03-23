@@ -66,6 +66,18 @@ O **AeroSys** é uma aplicação Spring Boot que centraliza o controle operacion
 
 ---
 
+## 💡 Motivação
+
+O **Aeroporto Regional de Santa Vitória do Palmar**, localizado no extremo sul do Rio Grande do Sul, operava com planilhas Excel espalhadas entre departamentos, cadernos físicos na torre de controle e comunicação feita por telefone e rádio.
+
+Com a expansão do aeroporto em março de 2025 — dobrando sua capacidade —, o que antes era desorganizado virou um colapso operacional. Voos eram remarcados sem avisar passageiros, tripulações ficavam sem escala por falha de comunicação, bagagens eram enviadas para voos errados e, no episódio mais crítico, **dois voos foram escalados para a mesma pista ao mesmo tempo** — evitado apenas pela atenção de um controlador no último momento.
+
+A situação levou a **ANAC a abrir uma investigação**, ameaçando suspender as licenças de operação do aeroporto.
+
+Em reunião de emergência, o diretor de operações **Eng. Carlos Medeiros** determinou a criação de um sistema centralizado que integrasse voos, tripulação e operações em tempo real. A equipe de TI interna recebeu a missão de construir o **AeroSys do zero**, com Java + Spring Boot + MySQL — em **60 dias**, antes da próxima auditoria da ANAC.
+
+---
+
 ## ✅ Requisitos
 
 Antes de rodar o projeto, certifique-se de ter instalado:
